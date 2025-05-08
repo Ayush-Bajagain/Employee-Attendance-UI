@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { 
@@ -12,6 +12,25 @@ import {
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [userRole, setUserRole] = useState(null);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const response = await axios.get("http://localhost:8080/api/v1/user/role", {
+          withCredentials: true
+        });
+        
+        if (response.data.httpStatus === "OK") {
+          setUserRole(response.data.data.role);
+        }
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -29,12 +48,22 @@ export default function Navbar() {
     return location.pathname === path;
   };
 
-  const navItems = [
-    { path: "/", icon: <MdDashboard size={24} />, label: "Dashboard" },
-    { path: "/employee", icon: <MdPeople size={24} />, label: "Employee" },
-    { path: "/attendance", icon: <MdAccessTime size={24} />, label: "Attendance" },
-    { path: "/report", icon: <MdAssessment size={24} />, label: "Report" },
-  ];
+  const getNavItems = () => {
+    if (userRole === "ADMIN") {
+      return [
+        { path: "/", icon: <MdDashboard size={24} />, label: "Dashboard" },
+        { path: "/employee", icon: <MdPeople size={24} />, label: "Employee" },
+        { path: "/report", icon: <MdAssessment size={24} />, label: "Report" },
+      ];
+    } else if (userRole === "EMPLOYEE") {
+      return [
+        { path: "/attendance", icon: <MdAccessTime size={24} />, label: "Attendance" },
+      ];
+    }
+    return [];
+  };
+
+  const navItems = getNavItems();
 
   return (
     <nav className="bg-gradient-to-b from-slate-800 to-slate-900 w-[250px] h-dvh p-6 flex flex-col items-center shadow-lg">
