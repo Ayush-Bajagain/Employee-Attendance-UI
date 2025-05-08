@@ -259,7 +259,7 @@ const Employee = () => {
           </div>
 
           {/* Employee Table */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-lg overflow-visible">
             {loading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -270,7 +270,7 @@ const Employee = () => {
                 <p className="text-gray-500 mt-2">Add new employees to get started</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-visible">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -299,7 +299,7 @@ const Employee = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {employees.map((employee) => (
-                      <tr key={employee.id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <tr key={employee.id} className="hover:bg-gray-50 transition-colors duration-150 relative">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {employee.fullName || '-'}
                         </td>
@@ -328,7 +328,7 @@ const Employee = () => {
                           
                           {/* Action Menu Dropdown */}
                           {showActionMenu === employee.id && (
-                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-40">
+                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[100]">
                               <div className="py-1" role="menu" aria-orientation="vertical">
                                 <button
                                   onClick={() => handleView(employee)}
@@ -366,7 +366,7 @@ const Employee = () => {
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                     </svg>
                                   </button>
-                                  <div className="absolute right-full top-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[60]"
+                                  <div className="absolute right-full top-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[110]"
                                     style={{
                                       marginRight: '0.5rem'
                                     }}

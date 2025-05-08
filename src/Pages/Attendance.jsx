@@ -72,7 +72,6 @@ const Attendance = () => {
         // Map only essential details from the response
         const formattedRecords = response.data.data.map(record => ({
           id: record.id,
-          employeeId: record.employee.id,
           date: record.attendanceDate,
           checkIn: record.checkInTime,
           checkOut: record.checkOutTime,
