@@ -41,17 +41,18 @@ const Attendance = () => {
   }, []);
 
   const toggleDropdown = (id, event) => {
+    event.stopPropagation();
     if (openDropdownId === id) {
       setOpenDropdownId(null);
     } else {
       const buttonRect = event.currentTarget.getBoundingClientRect();
-      const dropdownWidth = 280; // Increased width for better text display
+      const dropdownWidth = 280;
       const spaceOnRight = window.innerWidth - buttonRect.right;
       
       // Calculate position to ensure dropdown stays within viewport
       let left = buttonRect.left;
       if (spaceOnRight < dropdownWidth) {
-        left = buttonRect.left - dropdownWidth + buttonRect.width;
+        left = Math.max(10, buttonRect.left - dropdownWidth + buttonRect.width);
       }
       
       setDropdownPosition({
@@ -158,20 +159,22 @@ const Attendance = () => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const handleViewAllDetails = async (record) => {
+  const handleViewAllDetails = async (record, event) => {
+    event.stopPropagation();
     try {
       if (!record.id) {
         toast.error("Attendance ID is missing");
         return;
       }
-      console.log("Navigating to attendance details with ID:", record.id);
-      // Navigate to attendance details page
-      navigate(`/attendance-details/${record.id}`);
+      setOpenDropdownId(null);
+      // Get the current path to determine if we're in admin or employee section
+      const isAdmin = window.location.pathname.includes('/admin/');
+      const basePath = isAdmin ? '/admin' : '/employee';
+      navigate(`${basePath}/attendance/${record.id}`);
     } catch (error) {
       console.error('Error navigating to attendance details:', error);
       toast.error("Failed to view attendance details");
     }
-    setOpenDropdownId(null);
   };
 
   return (
@@ -342,7 +345,7 @@ const Attendance = () => {
                           {openDropdownId === record.id && (
                             <div
                               ref={dropdownRef}
-                              className="fixed z-50 w-[280px] rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] bg-white"
+                              className="fixed z-[100] w-[280px] rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.1)] bg-white"
                               style={{
                                 top: `${dropdownPosition.top}px`,
                                 left: `${dropdownPosition.left}px`
@@ -351,7 +354,7 @@ const Attendance = () => {
                               <div className="py-2" role="menu" aria-orientation="vertical">
                                 <button
                                   className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 flex items-center group transition-colors duration-150"
-                                  onClick={() => handleViewAllDetails(record)}
+                                  onClick={(e) => handleViewAllDetails(record, e)}
                                 >
                                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors duration-150 flex-shrink-0">
                                     <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

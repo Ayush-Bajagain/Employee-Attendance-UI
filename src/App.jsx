@@ -105,6 +105,14 @@ function App() {
               }
             />
             <Route
+              path="attendance/:id"
+              element={
+                <RoleProtected allowedRoles={["EMPLOYEE"]}>
+                  <AttendanceDetails />
+                </RoleProtected>
+              }
+            />
+            <Route
               path="reports"
               element={
                 <RoleProtected allowedRoles={["EMPLOYEE"]}>

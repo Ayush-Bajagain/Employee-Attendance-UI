@@ -4,6 +4,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaUserPlus, FaEllipsisV } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
 
 const Employee = () => {
   const [employees, setEmployees] = useState([]);
@@ -39,6 +40,9 @@ const Employee = () => {
   const [statusList, setStatusList] = useState([]);
 
   const [showActionMenu, setShowActionMenu] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0, width: '12rem' });
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [statusMenuPosition, setStatusMenuPosition] = useState({ left: '100%', top: 0 });
 
   const url = import.meta.env.VITE_BASE_URL;
   const navigate = useNavigate();
@@ -136,9 +140,102 @@ const Employee = () => {
   };
 
   // Function to handle action menu toggle
-  const toggleActionMenu = (employeeId) => {
+  const toggleActionMenu = (employeeId, event) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const buttonRect = event.currentTarget.getBoundingClientRect();
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      const dropdownWidth = 192; // 12rem = 192px
+      
+      // Calculate available space
+      const spaceRight = windowWidth - buttonRect.right;
+      const spaceLeft = buttonRect.left;
+      const spaceBottom = windowHeight - buttonRect.bottom;
+      
+      // Determine if dropdown should be positioned to the left or right
+      const positionRight = spaceRight >= dropdownWidth || spaceRight > spaceLeft;
+      
+      // Calculate horizontal position
+      const right = positionRight 
+        ? windowWidth - buttonRect.right
+        : windowWidth - buttonRect.left;
+      
+      // Calculate vertical position
+      const top = spaceBottom >= 200 // Approximate height of dropdown
+        ? buttonRect.bottom + window.scrollY + 5
+        : buttonRect.top + window.scrollY - 205; // Position above if not enough space below
+      
+      setDropdownPosition({
+        top,
+        right,
+        width: '12rem'
+      });
+    }
     setShowActionMenu(showActionMenu === employeeId ? null : employeeId);
+    setShowStatusMenu(false);
   };
+
+  // Function to handle status menu toggle
+  const toggleStatusMenu = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!showStatusMenu) {
+      const buttonRect = event.currentTarget.getBoundingClientRect();
+      const windowWidth = window.innerWidth;
+      const spaceRight = windowWidth - buttonRect.right;
+      const spaceLeft = buttonRect.left;
+      const statusMenuWidth = 192; // 12rem = 192px
+      const isMobile = windowWidth < 640; // sm breakpoint
+
+      if (isMobile) {
+        // On mobile, position below the main dropdown
+        setStatusMenuPosition({
+          left: '0',
+          right: 'auto',
+          top: '100%',
+          width: '100%'
+        });
+      } else {
+        // On desktop, check available space
+        if (spaceRight < statusMenuWidth && spaceLeft > statusMenuWidth) {
+          setStatusMenuPosition({
+            left: 'auto',
+            right: '100%',
+            top: 0,
+            width: '12rem'
+          });
+        } else {
+          setStatusMenuPosition({
+            left: '100%',
+            right: 'auto',
+            top: 0,
+            width: '12rem'
+          });
+        }
+      }
+    }
+
+    setShowStatusMenu(!showStatusMenu);
+  };
+
+  // Add click outside handler for both menus
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showActionMenu && !event.target.closest('.action-menu-button')) {
+        setShowActionMenu(null);
+        setShowStatusMenu(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showActionMenu]);
 
   // Function to handle view employee
   const handleView = (employee) => {
@@ -148,8 +245,8 @@ const Employee = () => {
         return;
       }
       console.log("Navigating to employee details with ID:", employee.id);
-      // Navigate to employee details page
-      navigate(`/employee-details/${employee.id}`);
+      // Navigate to employee details page with admin path
+      navigate(`/admin/employees/${employee.id}`);
     } catch (error) {
       console.error('Error navigating to employee details:', error);
       toast.error("Failed to view employee details");
@@ -239,174 +336,98 @@ const Employee = () => {
         theme="light"
       />
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header Section */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 transform hover:scale-[1.01] transition-transform duration-200">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Employee Management</h1>
-                <p className="text-gray-600">Manage your employee information</p>
-              </div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="mt-4 md:mt-0 flex items-center bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 transform hover:scale-[1.02] font-medium text-lg shadow-md hover:shadow-lg"
-              >
-                <FaUserPlus className="mr-2" />
-                Add Employee
-              </button>
+      <div className="w-full">
+        {/* Header Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-4 lg:p-6 mb-4 lg:mb-8 transform hover:scale-[1.01] transition-transform duration-200">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Employee Management</h1>
+              <p className="text-gray-600">Manage your employee information</p>
             </div>
+            <button
+              onClick={() => setShowModal(true)}
+              className="mt-4 md:mt-0 flex items-center bg-blue-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 transform hover:scale-[1.02] font-medium text-base lg:text-lg shadow-md hover:shadow-lg"
+            >
+              <FaUserPlus className="mr-2" />
+              Add Employee
+            </button>
           </div>
+        </div>
 
-          {/* Employee Table */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-visible">
-            {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              </div>
-            ) : employees.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-lg">No employees found</div>
-                <p className="text-gray-500 mt-2">Add new employees to get started</p>
-              </div>
-            ) : (
-              <div className="overflow-visible">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Full Name
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Email
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Phone
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Department
-                      </th>
-                      <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Position
-                      </th>
-                       <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Actions
-                      </th>
+        {/* Employee Table */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-visible">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+          ) : employees.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-lg">No employees found</div>
+              <p className="text-gray-500 mt-2">Add new employees to get started</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Full Name
+                    </th>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Phone
+                    </th>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Department
+                    </th>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Position
+                    </th>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {employees.map((employee) => (
+                    <tr key={employee.id} className="hover:bg-gray-50 transition-colors duration-150 relative">
+                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {employee.fullName || '-'}
+                      </td>
+                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                        {employee.email || '-'}
+                      </td>
+                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                        {employee.phoneNumber || '-'}
+                      </td>
+                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                        {employee.department || '-'}
+                      </td>
+                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                        {employee.position || '-'}
+                      </td>
+                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                        {employee.status || '-'}
+                      </td>
+                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                        <button
+                          onClick={(event) => toggleActionMenu(employee.id, event)}
+                          className="text-gray-400 hover:text-gray-600 focus:outline-none action-menu-button"
+                        >
+                          <FaEllipsisV className="h-5 w-5" />
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {employees.map((employee) => (
-                      <tr key={employee.id} className="hover:bg-gray-50 transition-colors duration-150 relative">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {employee.fullName || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.email || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.phoneNumber || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.department || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.position || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {employee.status || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                          <button
-                            onClick={() => toggleActionMenu(employee.id)}
-                            className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                          >
-                            <FaEllipsisV className="h-5 w-5" />
-                          </button>
-                          
-                          {/* Action Menu Dropdown */}
-                          {showActionMenu === employee.id && (
-                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-[100]">
-                              <div className="py-1" role="menu" aria-orientation="vertical">
-                                <button
-                                  onClick={() => handleView(employee)}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                                  role="menuitem"
-                                >
-                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                  </svg>
-                                  View Details
-                                </button>
-                                <button
-                                  onClick={() => handleEdit(employee)}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                                  role="menuitem"
-                                >
-                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                  </svg>
-                                  Edit
-                                </button>
-                                <div className="relative group">
-                                  <button
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between"
-                                    role="menuitem"
-                                  >
-                                    <div className="flex items-center">
-                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                      </svg>
-                                      Status
-                                    </div>
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                                    </svg>
-                                  </button>
-                                  <div className="absolute right-full top-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[110]"
-                                    style={{
-                                      marginRight: '0.5rem'
-                                    }}
-                                  >
-                                    <div className="py-1">
-                                      {statusList.map((status) => (
-                                        <button
-                                          key={status.id}
-                                          onClick={() => handleStatusChange(employee, status.statusName)}
-                                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                                        >
-                                          <span className={`w-2 h-2 ${getStatusColor(status.statusName)} rounded-full mr-2`}></span>
-                                          {status.statusName}
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="border-t border-gray-100"></div>
-                                <button
-                                  onClick={() => handleDelete(employee)}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                                  role="menuitem"
-                                >
-                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
@@ -634,6 +655,111 @@ const Employee = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Render dropdown in portal */}
+      {showActionMenu && createPortal(
+        <div 
+          className="fixed z-[99999] rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            right: `${dropdownPosition.right}px`,
+            width: dropdownPosition.width
+          }}
+        >
+          <div className="py-1" role="menu" aria-orientation="vertical">
+            <button
+              onClick={(event) => {
+                event.preventDefault();
+                handleView(employees.find(emp => emp.id === showActionMenu));
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center whitespace-nowrap"
+              role="menuitem"
+            >
+              <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span className="truncate">View Details</span>
+            </button>
+            <button
+              onClick={(event) => {
+                event.preventDefault();
+                handleEdit(employees.find(emp => emp.id === showActionMenu));
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center whitespace-nowrap"
+              role="menuitem"
+            >
+              <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span className="truncate">Edit</span>
+            </button>
+            <div className="relative">
+              <button
+                onClick={toggleStatusMenu}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between whitespace-nowrap"
+                role="menuitem"
+              >
+                <div className="flex items-center">
+                  <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="truncate text-xs sm:text-sm">Status</span>
+                </div>
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              {showStatusMenu && (
+                <div 
+                  className="absolute rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5"
+                  style={{
+                    ...statusMenuPosition,
+                    marginTop: statusMenuPosition.top === '100%' ? '0.5rem' : '0',
+                    marginLeft: statusMenuPosition.left === '100%' ? '0.5rem' : '0',
+                    marginRight: statusMenuPosition.right === '100%' ? '0.5rem' : '0',
+                    zIndex: 100000,
+                    maxHeight: statusMenuPosition.top === '100%' ? '200px' : 'none',
+                    overflowY: statusMenuPosition.top === '100%' ? 'auto' : 'visible'
+                  }}
+                >
+                  <div className="py-1">
+                    {statusList.map((status) => (
+                      <button
+                        key={status.id}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleStatusChange(employees.find(emp => emp.id === showActionMenu), status.statusName);
+                          setShowStatusMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-xs sm:text-sm text-gray-700 hover:bg-gray-100 flex items-center whitespace-nowrap"
+                      >
+                        <span className={`w-2 h-2 ${getStatusColor(status.statusName)} rounded-full mr-2 flex-shrink-0`}></span>
+                        <span className="truncate">{status.statusName}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="border-t border-gray-100"></div>
+            <button
+              onClick={(event) => {
+                event.preventDefault();
+                handleDelete(employees.find(emp => emp.id === showActionMenu));
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center whitespace-nowrap"
+              role="menuitem"
+            >
+              <svg className="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              <span className="truncate">Delete</span>
+            </button>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );
