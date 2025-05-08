@@ -51,13 +51,16 @@ export default function Navbar() {
   const getNavItems = () => {
     if (userRole === "ADMIN") {
       return [
-        { path: "/", icon: <MdDashboard size={24} />, label: "Dashboard" },
-        { path: "/employee", icon: <MdPeople size={24} />, label: "Employee" },
-        { path: "/report", icon: <MdAssessment size={24} />, label: "Report" },
+        { path: "/admin/dashboard", icon: <MdDashboard size={24} />, label: "Dashboard" },
+        { path: "/admin/employees", icon: <MdPeople size={24} />, label: "Employees" },
+        { path: "/admin/attendance", icon: <MdAccessTime size={24} />, label: "Attendance" },
+        { path: "/admin/reports", icon: <MdAssessment size={24} />, label: "Reports" },
       ];
     } else if (userRole === "EMPLOYEE") {
       return [
-        { path: "/attendance", icon: <MdAccessTime size={24} />, label: "Attendance" },
+        { path: "/employee/dashboard", icon: <MdDashboard size={24} />, label: "Dashboard" },
+        { path: "/employee/attendance", icon: <MdAccessTime size={24} />, label: "Attendance" },
+        { path: "/employee/reports", icon: <MdAssessment size={24} />, label: "Reports" },
       ];
     }
     return [];
