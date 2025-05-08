@@ -3,6 +3,7 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaUserPlus, FaEllipsisV } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const Employee = () => {
   const [employees, setEmployees] = useState([]);
@@ -35,25 +36,29 @@ const Employee = () => {
   const [departments, setDepartments] = useState([]);
   const [positions, setPositions] = useState([]);
   const [bloodGroups, setBloodGroups] = useState([]);
+  const [statusList, setStatusList] = useState([]);
 
   const [showActionMenu, setShowActionMenu] = useState(null);
 
   const url = import.meta.env.VITE_BASE_URL;
+  const navigate = useNavigate();
 
   // Fetch dropdown options
   const fetchDropdownOptions = async () => {
     try {
-      const [genderRes, departmentRes, positionRes, bloodGroupRes] = await Promise.all([
+      const [genderRes, departmentRes, positionRes, bloodGroupRes, statusRes] = await Promise.all([
         axios.get(`${url}/system-config/getGenders`, { withCredentials: true }),
         axios.get(`${url}/system-config/getDepartments`, { withCredentials: true }),
         axios.get(`${url}/system-config/getPositions`, { withCredentials: true }),
-        axios.get(`${url}/system-config/getBloodGroup`, { withCredentials: true })
+        axios.get(`${url}/system-config/getBloodGroup`, { withCredentials: true }),
+        axios.get(`${url}/system-config/getStatus`, { withCredentials: true })
       ]);
 
       if (genderRes.data.code === 200) setGenders(genderRes.data.data);
       if (departmentRes.data.code === 200) setDepartments(departmentRes.data.data);
       if (positionRes.data.code === 200) setPositions(positionRes.data.data);
       if (bloodGroupRes.data.code === 200) setBloodGroups(bloodGroupRes.data.data);
+      if (statusRes.data.code === 200) setStatusList(statusRes.data.data);
     } catch (error) {
       toast.error("Failed to fetch dropdown options");
     }
@@ -137,8 +142,18 @@ const Employee = () => {
 
   // Function to handle view employee
   const handleView = (employee) => {
-    // TODO: Implement view functionality
-    console.log('View employee:', employee);
+    try {
+      if (!employee.id) {
+        toast.error("Employee ID is missing");
+        return;
+      }
+      console.log("Navigating to employee details with ID:", employee.id);
+      // Navigate to employee details page
+      navigate(`/employee-details/${employee.id}`);
+    } catch (error) {
+      console.error('Error navigating to employee details:', error);
+      toast.error("Failed to view employee details");
+    }
     setShowActionMenu(null);
   };
 
@@ -168,10 +183,10 @@ const Employee = () => {
   };
 
   // Function to handle status change
-  const handleStatusChange = async (employee) => {
+  const handleStatusChange = async (employee, status) => {
     try {
       const response = await axios.put(`${url}/employee/changeStatus/${employee.id}`, {
-        status: employee.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+        status: status
       }, {
         withCredentials: true,
       });
@@ -185,6 +200,28 @@ const Employee = () => {
       toast.error(error.response?.data?.message || 'Failed to update status');
     }
     setShowActionMenu(null);
+  };
+
+  // Update the status dropdown section
+  const getStatusColor = (statusName) => {
+    switch (statusName) {
+      case 'ACTIVE':
+        return 'bg-green-500';
+      case 'INACTIVE':
+        return 'bg-red-500';
+      case 'PENDING':
+        return 'bg-yellow-500';
+      case 'ON_LEAVE':
+        return 'bg-blue-500';
+      case 'SUSPENDED':
+        return 'bg-orange-500';
+      case 'RESIGNED':
+        return 'bg-purple-500';
+      case 'DELETED':
+        return 'bg-gray-500';
+      default:
+        return 'bg-gray-500';
+    }
   };
 
   return (
@@ -291,7 +328,7 @@ const Employee = () => {
                           
                           {/* Action Menu Dropdown */}
                           {showActionMenu === employee.id && (
-                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                            <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-40">
                               <div className="py-1" role="menu" aria-orientation="vertical">
                                 <button
                                   onClick={() => handleView(employee)}
@@ -314,16 +351,40 @@ const Employee = () => {
                                   </svg>
                                   Edit
                                 </button>
-                                <button
-                                  onClick={() => handleStatusChange(employee)}
-                                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
-                                  role="menuitem"
-                                >
-                                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                  </svg>
-                                  {employee.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
-                                </button>
+                                <div className="relative group">
+                                  <button
+                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-between"
+                                    role="menuitem"
+                                  >
+                                    <div className="flex items-center">
+                                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                      </svg>
+                                      Status
+                                    </div>
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </button>
+                                  <div className="absolute right-full top-0 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[60]"
+                                    style={{
+                                      marginRight: '0.5rem'
+                                    }}
+                                  >
+                                    <div className="py-1">
+                                      {statusList.map((status) => (
+                                        <button
+                                          key={status.id}
+                                          onClick={() => handleStatusChange(employee, status.statusName)}
+                                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                                        >
+                                          <span className={`w-2 h-2 ${getStatusColor(status.statusName)} rounded-full mr-2`}></span>
+                                          {status.statusName}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
                                 <div className="border-t border-gray-100"></div>
                                 <button
                                   onClick={() => handleDelete(employee)}

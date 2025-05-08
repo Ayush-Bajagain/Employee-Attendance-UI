@@ -3,8 +3,10 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaClock, FaSignInAlt, FaSignOutAlt, FaCalendarAlt, FaUserClock, FaEllipsisV } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 const Attendance = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -70,6 +72,7 @@ const Attendance = () => {
         // Map only essential details from the response
         const formattedRecords = response.data.data.map(record => ({
           id: record.id,
+          employeeId: record.employee.id,
           date: record.attendanceDate,
           checkIn: record.checkInTime,
           checkOut: record.checkOutTime,
@@ -154,6 +157,22 @@ const Attendance = () => {
       day: "numeric"
     };
     return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  const handleViewAllDetails = async (record) => {
+    try {
+      if (!record.id) {
+        toast.error("Attendance ID is missing");
+        return;
+      }
+      console.log("Navigating to attendance details with ID:", record.id);
+      // Navigate to attendance details page
+      navigate(`/attendance-details/${record.id}`);
+    } catch (error) {
+      console.error('Error navigating to attendance details:', error);
+      toast.error("Failed to view attendance details");
+    }
+    setOpenDropdownId(null);
   };
 
   return (
@@ -333,10 +352,7 @@ const Attendance = () => {
                               <div className="py-2" role="menu" aria-orientation="vertical">
                                 <button
                                   className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 flex items-center group transition-colors duration-150"
-                                  onClick={() => {
-                                    console.log("View all details for record:", record.id);
-                                    setOpenDropdownId(null);
-                                  }}
+                                  onClick={() => handleViewAllDetails(record)}
                                 >
                                   <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center mr-3 group-hover:bg-blue-200 transition-colors duration-150 flex-shrink-0">
                                     <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
