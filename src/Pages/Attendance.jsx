@@ -6,6 +6,8 @@ import { FaClock, FaSignInAlt, FaSignOutAlt, FaCalendarAlt, FaUserClock, FaEllip
 import { useNavigate } from "react-router-dom";
 
 const Attendance = () => {
+  const url = import.meta.env.VITE_BASE_URL;
+  
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -15,7 +17,6 @@ const Attendance = () => {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef(null);
-  const url = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
     const timer = setInterval(() => {

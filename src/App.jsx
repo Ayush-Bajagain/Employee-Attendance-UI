@@ -17,6 +17,7 @@ import EmployeeDashboard from './components/EmployeeDashboard';
 import EmployeeReport from './components/EmployeeReport';
 import RoleProtected from './components/RoleProtected';
 import AdminAttendance from './components/AdminAttendance';
+import EmployeeProfile from './Pages/EmployeeProfile';
 
 function App() {
   const [count, setCount] = useState(0);
@@ -88,38 +89,11 @@ function App() {
 
           {/* Employee Routes */}
           <Route path="employee">
-            <Route
-              path="dashboard"
-              element={
-                <RoleProtected allowedRoles={["EMPLOYEE"]}>
-                  <EmployeeDashboard />
-                </RoleProtected>
-              }
-            />
-            <Route
-              path="attendance"
-              element={
-                <RoleProtected allowedRoles={["EMPLOYEE"]}>
-                  <Attendance />
-                </RoleProtected>
-              }
-            />
-            <Route
-              path="attendance/:id"
-              element={
-                <RoleProtected allowedRoles={["EMPLOYEE"]}>
-                  <AttendanceDetails />
-                </RoleProtected>
-              }
-            />
-            <Route
-              path="reports"
-              element={
-                <RoleProtected allowedRoles={["EMPLOYEE"]}>
-                  <EmployeeReport />
-                </RoleProtected>
-              }
-            />
+            <Route path="dashboard" element={<EmployeeDashboard />} />
+            <Route path="attendance" element={<Attendance />} />
+            <Route path="attendance/:id" element={<AttendanceDetails />} />
+            <Route path="reports" element={<EmployeeReport />} />
+            <Route path="profile" element={<EmployeeProfile />} />
           </Route>
 
           {/* Redirect root to appropriate dashboard */}

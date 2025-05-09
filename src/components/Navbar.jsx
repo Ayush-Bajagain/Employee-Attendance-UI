@@ -8,7 +8,8 @@ import {
   MdAssessment,
   MdLogout,
   MdMenu,
-  MdClose
+  MdClose,
+  MdPerson
 } from "react-icons/md";
 
 export default function Navbar() {
@@ -16,6 +17,8 @@ export default function Navbar() {
   const location = useLocation();
   const [userRole, setUserRole] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -26,6 +29,7 @@ export default function Navbar() {
         
         if (response.data.httpStatus === "OK") {
           setUserRole(response.data.data.role);
+          setUserEmail(response.data.data.email);
         }
       } catch (error) {
         console.error("Error fetching user role:", error);
@@ -33,6 +37,20 @@ export default function Navbar() {
     };
 
     fetchUserRole();
+  }, []);
+
+  // Add click outside handler for profile menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.profile-menu-button') && !event.target.closest('.profile-menu')) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -64,6 +82,7 @@ export default function Navbar() {
         { path: "/employee/dashboard", icon: <MdDashboard size={24} />, label: "Dashboard" },
         { path: "/employee/attendance", icon: <MdAccessTime size={24} />, label: "Attendance" },
         { path: "/employee/reports", icon: <MdAssessment size={24} />, label: "Reports" },
+        { path: "/employee/profile", icon: <MdPerson size={24} />, label: "Profile" },
       ];
     }
     return [];
@@ -74,21 +93,6 @@ export default function Navbar() {
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      const nav = document.querySelector('nav');
-      if (nav && !nav.contains(event.target) && !event.target.closest('button')) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   // Close menu when route changes
   useEffect(() => {
@@ -116,18 +120,18 @@ export default function Navbar() {
       <nav className={`fixed top-0 left-0 h-full bg-gradient-to-b from-slate-800 to-slate-900 w-[250px] p-6 flex flex-col items-center shadow-lg transition-transform duration-300 ease-in-out z-40
         ${isMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${isMenuOpen ? 'top-16' : 'top-0 lg:top-0'}`}>
-        <div className="logo mb-10">
+        <div className="logo mb-6">
           <h2 className="text-slate-100 font-semibold text-2xl text-center">
             Employee Attendance
           </h2>
         </div>
 
-        <ul className="text-slate-300 text-lg w-full flex flex-col gap-4">
+        <ul className="text-slate-300 text-lg w-full flex flex-col gap-2">
           {navItems.map((item) => (
             <li key={item.path}>
               <Link
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
                   isActive(item.path)
                     ? "bg-indigo-500/80 text-white shadow-md"
                     : "hover:bg-slate-700/50 hover:text-white"
@@ -138,10 +142,11 @@ export default function Navbar() {
               </Link>
             </li>
           ))}
-          <li className="mt-auto">
+          {/* Logout Button as part of the main navigation */}
+          <li>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg w-full text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 transition-all duration-200"
+              className="flex items-center gap-3 px-4 py-2 rounded-lg w-full text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 transition-all duration-200"
             >
               <MdLogout size={24} />
               <span>Logout</span>
@@ -158,6 +163,11 @@ export default function Navbar() {
           onClick={() => setIsMenuOpen(false)}
         />
       )}
+
+      {/* Main Content Wrapper */}
+      <div className={`lg:ml-[250px] transition-all duration-300 ${isMenuOpen ? 'ml-[250px]' : 'ml-0'}`}>
+        
+      </div>
     </>
   );
 }
