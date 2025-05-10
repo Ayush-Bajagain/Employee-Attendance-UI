@@ -74,12 +74,12 @@ export default function EmployeeDashboard() {
         <h1 className="text-2xl font-semibold text-gray-800">
           Welcome back, {employeeData?.fullName}
         </h1>
-        <div className="flex items-center gap-4">
+        {/* <div className="flex items-center gap-4 bg-red-500">
           <button className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
             <MdNotifications size={20} />
             <span>Mark Attendance</span>
           </button>
-        </div>
+        </div> */}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
