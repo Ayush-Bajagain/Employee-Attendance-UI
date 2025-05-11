@@ -11,25 +11,19 @@ const Employee = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
+    employeeId: "",
     fullName: "",
     email: "",
     phoneNumber: "",
     address: "",
-    gender: {
-      genderName: ""
-    },
+    gender: "",
     dob: "",
-    department: {
-      departmentName: ""
-    },
-    position: {
-      positionName: ""
-    },
+    department: "",
+    position: "",
     dateOfJoining: "",
-    bloodGroupName: {
-      bloodGroupName: ""
-    }
+    bloodGroup: ""
   });
 
   // States for dropdown options
@@ -94,49 +88,68 @@ const Employee = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await axios.post(`${url}/employee/register`, formData, {
+      const endpoint = isEditMode ? `${url}/employee/update-employee` : `${url}/employee/register`;
+      
+      // Format the data according to API requirements
+      const formattedData = {
+        employeeId: formData.employeeId,
+        fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
+        gender: formData.gender,
+        bloodGroup: formData.bloodGroup,
+        department: formData.department,
+        dateOfJoining: formData.dateOfJoining ? `${formData.dateOfJoining}T00:00:00.000+05:45` : null,
+        email: formData.email,
+        address: formData.address,
+        dateOfBirth: formData.dob ? `${formData.dob}T00:00:00.000+05:45` : null,
+        position: formData.position
+      };
+
+      console.log('Submitting data:', formattedData); // For debugging
+
+      const response = await axios.post(endpoint, formattedData, {
         withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
+      
       if (response.data.code === 201) {
-        toast.success(response.data.message);
+        toast.success(response.data.message || "Employee updated successfully");
         setShowModal(false);
-        setFormData({
-          fullName: "",
-          email: "",
-          phoneNumber: "",
-          address: "",
-          gender: { genderName: "" },
-          dob: "",
-          department: { departmentName: "" },
-          position: { positionName: "" },
-          dateOfJoining: "",
-          bloodGroupName: { bloodGroupName: "" }
-        });
+        resetForm();
         fetchEmployees();
       } else {
-        toast.error(response.data.message || "Failed to add employee");
+        toast.error(response.data.message || "Failed to save employee");
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to add employee");
+      console.error('Error submitting form:', error); // For debugging
+      toast.error(error.response?.data?.message || "Failed to save employee");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
+  const resetForm = () => {
     setFormData({
+      employeeId: "",
       fullName: "",
       email: "",
       phoneNumber: "",
       address: "",
-      gender: { genderName: "" },
+      gender: "",
       dob: "",
-      department: { departmentName: "" },
-      position: { positionName: "" },
+      department: "",
+      position: "",
       dateOfJoining: "",
-      bloodGroupName: { bloodGroupName: "" }
+      bloodGroup: ""
     });
+    setIsEditMode(false);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    resetForm();
   };
 
   // Function to handle action menu toggle
@@ -256,8 +269,21 @@ const Employee = () => {
 
   // Function to handle edit employee
   const handleEdit = (employee) => {
-    // TODO: Implement edit functionality
-    console.log('Edit employee:', employee);
+    setIsEditMode(true);
+    setFormData({
+      employeeId: employee.id,
+      fullName: employee.fullName || "",
+      email: employee.email || "",
+      phoneNumber: employee.phoneNumber || "",
+      address: employee.address || "",
+      gender: employee.gender || "",
+      dob: employee.dob ? employee.dob.split('T')[0] : "",
+      department: employee.department || "",
+      position: employee.position || "",
+      dateOfJoining: employee.dateOfJoining ? employee.dateOfJoining.split('T')[0] : "",
+      bloodGroup: employee.bloodGroup || ""
+    });
+    setShowModal(true);
     setShowActionMenu(null);
   };
 
@@ -449,13 +475,15 @@ const Employee = () => {
         </div>
       </div>
 
-      {/* Add Employee Modal */}
+      {/* Add/Edit Employee Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-4 sm:top-10 mx-auto p-4 sm:p-6 border w-[95%] sm:w-[90%] md:w-[80%] lg:w-[700px] shadow-lg rounded-2xl bg-white">
             <div className="mt-3">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg sm:text-xl font-medium text-gray-900">Add Employee</h3>
+                <h3 className="text-lg sm:text-xl font-medium text-gray-900">
+                  {isEditMode ? 'Edit Employee' : 'Add Employee'}
+                </h3>
                 <button
                   onClick={handleCloseModal}
                   className="text-gray-400 hover:text-gray-500 focus:outline-none"
@@ -531,12 +559,9 @@ const Employee = () => {
                     Gender
                   </label>
                   <select
-                    value={formData.gender.genderName}
+                    value={formData.gender}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        gender: { genderName: e.target.value },
-                      })
+                      setFormData({ ...formData, gender: e.target.value })
                     }
                     className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -556,7 +581,7 @@ const Employee = () => {
                   </label>
                   <input
                     type="date"
-                    value={formData.dob.split('T')[0]}
+                    value={formData.dob}
                     onChange={(e) =>
                       setFormData({ ...formData, dob: e.target.value })
                     }
@@ -570,12 +595,9 @@ const Employee = () => {
                     Department
                   </label>
                   <select
-                    value={formData.department.departmentName}
+                    value={formData.department}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        department: { departmentName: e.target.value },
-                      })
+                      setFormData({ ...formData, department: e.target.value })
                     }
                     className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -594,12 +616,9 @@ const Employee = () => {
                     Position
                   </label>
                   <select
-                    value={formData.position.positionName}
+                    value={formData.position}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        position: { positionName: e.target.value },
-                      })
+                      setFormData({ ...formData, position: e.target.value })
                     }
                     className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -619,7 +638,7 @@ const Employee = () => {
                   </label>
                   <input
                     type="date"
-                    value={formData.dateOfJoining.split('T')[0]}
+                    value={formData.dateOfJoining}
                     onChange={(e) =>
                       setFormData({ ...formData, dateOfJoining: e.target.value })
                     }
@@ -633,12 +652,9 @@ const Employee = () => {
                     Blood Group
                   </label>
                   <select
-                    value={formData.bloodGroupName.bloodGroupName}
+                    value={formData.bloodGroup}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        bloodGroupName: { bloodGroupName: e.target.value },
-                      })
+                      setFormData({ ...formData, bloodGroup: e.target.value })
                     }
                     className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
@@ -672,10 +688,10 @@ const Employee = () => {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Adding...
+                        {isEditMode ? 'Updating...' : 'Adding...'}
                       </>
                     ) : (
-                      'Add'
+                      isEditMode ? 'Update' : 'Add'
                     )}
                   </button>
                 </div>
