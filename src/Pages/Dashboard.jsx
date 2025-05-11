@@ -1,99 +1,157 @@
-import React from 'react';
-import { MdPeople, MdAccessTime, MdAssessment, MdNotifications, MdEvent, MdPerson } from 'react-icons/md';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { MdPeople, MdAccessTime, MdEventNote, MdPerson } from 'react-icons/md';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const Dashboard = () => {
-  const stats = [
-    { title: 'Total Employees', value: '150', icon: <MdPeople size={24} />, color: 'bg-blue-500' },
-    { title: 'Present Today', value: '142', icon: <MdAccessTime size={24} />, color: 'bg-green-500' },
-    { title: 'On Leave', value: '5', icon: <MdEvent size={24} />, color: 'bg-yellow-500' },
-    { title: 'Absent', value: '3', icon: <MdPerson size={24} />, color: 'bg-red-500' },
-  ];
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    presentToday: 0,
+    onLeave: 0,
+    absent: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const url = import.meta.env.VITE_BASE_URL;
 
-  const recentActivities = [
-    { id: 1, employee: 'John Doe', action: 'Checked in', time: '9:00 AM', status: 'On time' },
-    { id: 2, employee: 'Jane Smith', action: 'Checked in', time: '9:15 AM', status: 'Late' },
-    { id: 3, employee: 'Mike Johnson', action: 'Applied for leave', time: '10:30 AM', status: 'Pending' },
-    { id: 4, employee: 'Sarah Wilson', action: 'Checked out', time: '6:00 PM', status: 'On time' },
-  ];
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
 
-  const quickActions = [
-    { title: 'Add New Employee', description: 'Register a new employee in the system' },
-    { title: 'Generate Reports', description: 'Create attendance and performance reports' },
-    { title: 'Manage Leaves', description: 'View and approve leave requests' },
-    { title: 'Send Notifications', description: 'Send announcements to all employees' },
-  ];
+  const fetchDashboardStats = async () => {
+    try {
+      // Fetch total employees
+      const totalEmployeesResponse = await axios.get(`${url}/employee/get-total-employee`, {
+        withCredentials: true
+      });
+
+      // Fetch attendance status
+      const attendanceResponse = await axios.get(`${url}/attendance/count-status-of-employee`, {
+        withCredentials: true
+      });
+
+      if (totalEmployeesResponse.data.code === 200 && attendanceResponse.data.code === 200) {
+        setStats({
+          totalEmployees: totalEmployeesResponse.data.data || 0,
+          presentToday: attendanceResponse.data.data.present || 0,
+          onLeave: attendanceResponse.data.data.onLeave || 0,
+          absent: attendanceResponse.data.data.absent || 0
+        });
+      }
+    } catch (error) {
+      toast.error('Failed to fetch dashboard statistics');
+      console.error('Error fetching dashboard stats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-800 mb-6">Admin Dashboard</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-md p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">Dashboard</h1>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Total Employees Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 transform hover:scale-[1.02] transition-transform duration-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm">{stat.title}</p>
-                <p className="text-2xl font-semibold text-gray-800 mt-1">{stat.value}</p>
+                <p className="text-sm font-medium text-gray-600">Total Employees</p>
+                <p className="text-2xl font-bold text-gray-900 mt-2">{stats.totalEmployees}</p>
               </div>
-              <div className={`${stat.color} p-3 rounded-full text-white`}>
-                {stat.icon}
+              <div className="bg-indigo-100 p-3 rounded-full">
+                <MdPeople className="h-6 w-6 text-indigo-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center text-sm text-gray-600">
+                <span className="text-green-500 mr-2">●</span>
+                <span>Active employees in the system</span>
               </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activities */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Recent Activities</h2>
-            <button className="text-blue-500 hover:text-blue-600">View All</button>
-          </div>
-          <div className="space-y-4">
-            {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-gray-100 p-2 rounded-full">
-                    <MdNotifications className="text-gray-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800">{activity.employee}</p>
-                    <p className="text-xs text-gray-500">{activity.action}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-600">{activity.time}</p>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    activity.status === 'On time' ? 'bg-green-100 text-green-800' :
-                    activity.status === 'Late' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-blue-100 text-blue-800'
-                  }`}>
-                    {activity.status}
-                  </span>
-                </div>
+          {/* Present Today Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 transform hover:scale-[1.02] transition-transform duration-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Present Today</p>
+                <p className="text-2xl font-bold text-gray-900 mt-2">{stats.presentToday}</p>
               </div>
-            ))}
+              <div className="bg-green-100 p-3 rounded-full">
+                <MdAccessTime className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center text-sm text-gray-600">
+                <span className="text-green-500 mr-2">●</span>
+                <span>Employees present today</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                className="p-4 border rounded-lg hover:bg-gray-50 text-left transition-colors"
-              >
-                <h3 className="font-medium text-gray-800">{action.title}</h3>
-                <p className="text-sm text-gray-500 mt-1">{action.description}</p>
-              </button>
-            ))}
+          {/* On Leave Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 transform hover:scale-[1.02] transition-transform duration-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">On Leave</p>
+                <p className="text-2xl font-bold text-gray-900 mt-2">{stats.onLeave}</p>
+              </div>
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <MdEventNote className="h-6 w-6 text-yellow-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center text-sm text-gray-600">
+                <span className="text-yellow-500 mr-2">●</span>
+                <span>Employees on leave</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Absent Card */}
+          <div className="bg-white rounded-xl shadow-md p-6 transform hover:scale-[1.02] transition-transform duration-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Absent</p>
+                <p className="text-2xl font-bold text-gray-900 mt-2">{stats.absent}</p>
+              </div>
+              <div className="bg-red-100 p-3 rounded-full">
+                <MdPerson className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="flex items-center text-sm text-gray-600">
+                <span className="text-red-500 mr-2">●</span>
+                <span>Employees absent today</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default Dashboard;

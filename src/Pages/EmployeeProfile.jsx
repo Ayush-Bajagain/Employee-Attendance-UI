@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { MdLock, MdPerson, MdEmail, MdPhone, MdEdit, MdLocationOn, MdBloodtype, MdWork, MdCalendarToday } from 'react-icons/md';
+import { MdLock, MdPerson, MdEmail, MdPhone, MdEdit, MdLocationOn, MdBloodtype, MdWork, MdCalendarToday, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -26,6 +26,11 @@ const EmployeeProfile = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showPasswords, setShowPasswords] = useState({
+    currentPassword: false,
+    newPassword: false,
+    confirmPassword: false
+  });
 
   useEffect(() => {
     fetchProfile();
@@ -113,6 +118,13 @@ const EmployeeProfile = () => {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
   };
 
   if (isLoading) {
@@ -357,12 +369,23 @@ const EmployeeProfile = () => {
                   <MdLock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="password"
+                  type={showPasswords.currentPassword ? "text" : "password"}
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility('currentPassword')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  {showPasswords.currentPassword ? (
+                    <MdVisibilityOff className="h-5 w-5" />
+                  ) : (
+                    <MdVisibility className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -375,12 +398,23 @@ const EmployeeProfile = () => {
                   <MdLock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="password"
+                  type={showPasswords.newPassword ? "text" : "password"}
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility('newPassword')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  {showPasswords.newPassword ? (
+                    <MdVisibilityOff className="h-5 w-5" />
+                  ) : (
+                    <MdVisibility className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -393,12 +427,23 @@ const EmployeeProfile = () => {
                   <MdLock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="password"
+                  type={showPasswords.confirmPassword ? "text" : "password"}
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility('confirmPassword')}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  {showPasswords.confirmPassword ? (
+                    <MdVisibilityOff className="h-5 w-5" />
+                  ) : (
+                    <MdVisibility className="h-5 w-5" />
+                  )}
+                </button>
               </div>
             </div>
 

@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Provider } from "../context/ContextProvider";
-import { MdEmail, MdLock, MdClose } from "react-icons/md";
+import { MdEmail, MdLock, MdClose, MdVisibility, MdVisibilityOff } from "react-icons/md";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Login = () => {
   const url = import.meta.env.VITE_BASE_URL;
@@ -18,10 +20,13 @@ const Login = () => {
   const [quickAttendanceMessage, setQuickAttendanceMessage] = useState("");
   const navigate = useNavigate();
   const { dispatch } = Provider();
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     try {
       const response = await axios.post(
@@ -38,6 +43,7 @@ const Login = () => {
       if (response.data.code === 200) {
         dispatch({ type: "LOGIN" });
         sessionStorage.setItem("isLogged", "true");
+        toast.success('Login successful');
         navigate("/");
       } else {
         setError(response.data.message);
@@ -45,6 +51,8 @@ const Login = () => {
     } catch (err) {
       setError("Login failed, please try again!");
       console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -83,8 +91,24 @@ const Login = () => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-blue-50">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <div className="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md mx-4">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
@@ -129,21 +153,43 @@ const Login = () => {
                 <MdLock className="h-5 w-5 text-gray-400" />
               </div>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                 placeholder="Enter your password"
                 required
               />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? (
+                  <MdVisibilityOff className="h-5 w-5" />
+                ) : (
+                  <MdVisibility className="h-5 w-5" />
+                )}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-indigo-600 text-white px-4 py-3 rounded-xl font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-[1.02]"
+            disabled={isLoading}
+            className="w-full bg-indigo-600 text-white px-4 py-3 rounded-xl font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign In
+            {isLoading ? (
+              <div className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Signing in...
+              </div>
+            ) : (
+              'Sign In'
+            )}
           </button>
 
           <div className="relative my-4">

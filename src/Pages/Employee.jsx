@@ -263,12 +263,19 @@ const Employee = () => {
 
   // Function to handle delete employee
   const handleDelete = async (employee) => {
+    const confirmDelete = window.confirm(`Are you sure to delete the employee ${employee.fullName}?`);
+    
+    if (!confirmDelete) {
+      return;
+    }
+
     try {
-      const response = await axios.delete(`${url}/employee/delete/${employee.id}`, {
+      const response = await axios.post(`${url}/employee/delete/${employee.id}`, {}, {
         withCredentials: true,
       });
-      if (response.data.code === 200) {
-        toast.success('Employee deleted successfully');
+      
+      if (response.data.code === 201) {
+        toast.success(response.data.message || 'Employee deleted successfully');
         fetchEmployees(); // Refresh the list
       } else {
         toast.error(response.data.message || 'Failed to delete employee');
@@ -281,14 +288,25 @@ const Employee = () => {
 
   // Function to handle status change
   const handleStatusChange = async (employee, status) => {
+    const confirmStatusChange = window.confirm(
+      `Are you sure you want to change the status of ${employee.fullName} from ${employee.status || 'N/A'} to ${status}?`
+    );
+    
+    if (!confirmStatusChange) {
+      setShowActionMenu(null);
+      return;
+    }
+
     try {
-      const response = await axios.put(`${url}/employee/changeStatus/${employee.id}`, {
+      const response = await axios.post(`${url}/employee/updateStatus`, {
+        employeeId: employee.id,
         status: status
       }, {
         withCredentials: true,
       });
-      if (response.data.code === 200) {
-        toast.success('Status updated successfully');
+      
+      if (response.data.code === 201) {
+        toast.success(response.data.message || 'Status updated successfully');
         fetchEmployees(); // Refresh the list
       } else {
         toast.error(response.data.message || 'Failed to update status');
@@ -433,12 +451,22 @@ const Employee = () => {
 
       {/* Add Employee Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-          <div className="relative top-20 mx-auto p-5 border w-[600px] shadow-lg rounded-2xl bg-white">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-4 sm:top-10 mx-auto p-4 sm:p-6 border w-[95%] sm:w-[90%] md:w-[80%] lg:w-[700px] shadow-lg rounded-2xl bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Add Employee</h3>
-              <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg sm:text-xl font-medium text-gray-900">Add Employee</h3>
+                <button
+                  onClick={handleCloseModal}
+                  className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="col-span-1 sm:col-span-2">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Full Name
                   </label>
@@ -453,7 +481,7 @@ const Employee = () => {
                   />
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Email
                   </label>
@@ -468,7 +496,7 @@ const Employee = () => {
                   />
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Phone Number
                   </label>
@@ -483,7 +511,7 @@ const Employee = () => {
                   />
                 </div>
 
-                <div className="col-span-2">
+                <div className="col-span-1 sm:col-span-2">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Address
                   </label>
@@ -498,7 +526,7 @@ const Employee = () => {
                   />
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Gender
                   </label>
@@ -522,7 +550,7 @@ const Employee = () => {
                   </select>
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Date of Birth
                   </label>
@@ -537,7 +565,7 @@ const Employee = () => {
                   />
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Department
                   </label>
@@ -561,7 +589,7 @@ const Employee = () => {
                   </select>
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Position
                   </label>
@@ -585,7 +613,7 @@ const Employee = () => {
                   </select>
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Date of Joining
                   </label>
@@ -600,7 +628,7 @@ const Employee = () => {
                   />
                 </div>
 
-                <div>
+                <div className="col-span-1">
                   <label className="block text-gray-700 text-sm font-bold mb-2">
                     Blood Group
                   </label>
@@ -624,19 +652,19 @@ const Employee = () => {
                   </select>
                 </div>
 
-                <div className="col-span-2 flex justify-end space-x-2 mt-4">
+                <div className="col-span-1 sm:col-span-2 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
                   <button
                     type="button"
                     onClick={handleCloseModal}
                     disabled={isSubmitting}
-                    className="bg-gray-300 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-400 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto bg-gray-300 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-400 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
                     {isSubmitting ? (
                       <>
