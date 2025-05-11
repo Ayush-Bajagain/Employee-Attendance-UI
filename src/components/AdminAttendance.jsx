@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MdSearch, MdDownload, MdPerson, MdChevronLeft, MdChevronRight, MdCalendarToday, MdFilterList } from 'react-icons/md';
+import { MdSearch, MdDownload, MdPerson, MdChevronLeft, MdChevronRight, MdCalendarToday, MdFilterList, MdEventBusy } from 'react-icons/md';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -21,11 +21,17 @@ export default function AdminAttendance() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [showMonthFilter, setShowMonthFilter] = useState(false);
+  const [attendanceCounts, setAttendanceCounts] = useState({
+    present: 0,
+    absent: 0,
+    onLeave: 0
+  });
 
   useEffect(() => {
     fetchEmployees();
     fetchAttendanceRecords();
     fetchDepartments();
+    fetchAttendanceCounts();
   }, []);
 
   const fetchEmployees = async () => {
@@ -101,6 +107,21 @@ export default function AdminAttendance() {
     } catch (error) {
       toast.error('Failed to fetch departments');
       console.error('Error fetching departments:', error);
+    }
+  };
+
+  const fetchAttendanceCounts = async () => {
+    try {
+      const response = await axios.get(`${url}/attendance/count-status-of-employee`, {
+        withCredentials: true
+      });
+      
+      if (response.data.code === 200) {
+        setAttendanceCounts(response.data.data);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch attendance counts');
+      console.error('Error fetching attendance counts:', error);
     }
   };
 
@@ -231,6 +252,49 @@ export default function AdminAttendance() {
     setCurrentPage(1); // Reset to first page when filter changes
   };
 
+  const handleExportReport = async () => {
+    try {
+      const response = await axios.post(
+        `${url}/attendance/export-attendance`,
+        {
+          department: selectedDepartment || undefined,
+          searchQuery: searchQuery || undefined
+        },
+        {
+          withCredentials: true,
+          responseType: 'blob' // Important for handling file download
+        }
+      );
+
+      // Create a blob from the response data
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      
+      // Create a URL for the blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Set the file name
+      const fileName = `attendance_report_${new Date().toISOString().split('T')[0]}.xlsx`;
+      link.setAttribute('download', fileName);
+      
+      // Append to body, click and remove
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Report exported successfully');
+    } catch (error) {
+      console.error('Error exporting report:', error);
+      toast.error('Failed to export report');
+    }
+  };
+
   return (
     <div className="p-6 mt-4 lg:mt-0">
       <ToastContainer
@@ -249,7 +313,10 @@ export default function AdminAttendance() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Employee Management</h1>
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
+          <button 
+            onClick={handleExportReport}
+            className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+          >
             <MdDownload />
             Export Report
           </button>
@@ -257,22 +324,41 @@ export default function AdminAttendance() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Present</h3>
-          <p className="text-2xl font-bold text-green-600">45</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <MdPerson className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Total Present</h3>
+              <p className="text-2xl font-bold text-gray-800">{attendanceCounts.present}</p>
+            </div>
+          </div>
         </div>
+
         <div className="bg-white rounded-lg shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Absent</h3>
-          <p className="text-2xl font-bold text-red-600">5</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-100 rounded-lg">
+              <MdEventBusy className="w-6 h-6 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Total Absent</h3>
+              <p className="text-2xl font-bold text-gray-800">{attendanceCounts.absent}</p>
+            </div>
+          </div>
         </div>
+
         <div className="bg-white rounded-lg shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Late Arrivals</h3>
-          <p className="text-2xl font-bold text-yellow-600">3</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">On Leave</h3>
-          <p className="text-2xl font-bold text-blue-600">2</p>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <MdCalendarToday className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">On Leave</h3>
+              <p className="text-2xl font-bold text-gray-800">{attendanceCounts.onLeave}</p>
+            </div>
+          </div>
         </div>
       </div>
 
