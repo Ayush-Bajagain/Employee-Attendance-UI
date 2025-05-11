@@ -365,6 +365,20 @@ const Employee = () => {
     }
   };
 
+  // Add click outside handler for modal
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showModal && event.target.classList.contains('modal-backdrop')) {
+        handleCloseModal();
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showModal]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <ToastContainer
@@ -477,25 +491,25 @@ const Employee = () => {
 
       {/* Add/Edit Employee Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-4 sm:top-10 mx-auto p-4 sm:p-6 border w-[95%] sm:w-[90%] md:w-[80%] lg:w-[700px] shadow-lg rounded-2xl bg-white">
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50 modal-backdrop">
+          <div className="relative top-4 sm:top-10 mx-auto p-4 sm:p-6 border w-[95%] sm:w-[90%] md:w-[80%] lg:w-[700px] shadow-2xl rounded-2xl bg-white/95 backdrop-blur-md transform transition-all duration-300 ease-in-out">
             <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg sm:text-xl font-medium text-gray-900">
+              <div className="flex justify-between items-center mb-6 border-b pb-4">
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800">
                   {isEditMode ? 'Edit Employee' : 'Add Employee'}
                 </h3>
                 <button
                   onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                  className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200"
                 >
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="col-span-1 sm:col-span-2">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Full Name
                   </label>
                   <input
@@ -504,13 +518,13 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, fullName: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div className="col-span-1">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Email
                   </label>
                   <input
@@ -519,13 +533,13 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div className="col-span-1">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Phone Number
                   </label>
                   <input
@@ -534,13 +548,13 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, phoneNumber: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div className="col-span-1 sm:col-span-2">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Address
                   </label>
                   <input
@@ -549,13 +563,13 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, address: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div className="col-span-1">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Gender
                   </label>
                   <select
@@ -563,7 +577,7 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, gender: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   >
                     <option value="">Select Gender</option>
@@ -576,7 +590,7 @@ const Employee = () => {
                 </div>
 
                 <div className="col-span-1">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Date of Birth
                   </label>
                   <input
@@ -585,13 +599,13 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, dob: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div className="col-span-1">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Department
                   </label>
                   <select
@@ -599,7 +613,7 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, department: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   >
                     <option value="">Select Department</option>
@@ -612,7 +626,7 @@ const Employee = () => {
                 </div>
 
                 <div className="col-span-1">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Position
                   </label>
                   <select
@@ -620,7 +634,7 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, position: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   >
                     <option value="">Select Position</option>
@@ -633,7 +647,7 @@ const Employee = () => {
                 </div>
 
                 <div className="col-span-1">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Date of Joining
                   </label>
                   <input
@@ -642,13 +656,13 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, dateOfJoining: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div className="col-span-1">
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                  <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Blood Group
                   </label>
                   <select
@@ -656,7 +670,7 @@ const Employee = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, bloodGroup: e.target.value })
                     }
-                    className="shadow appearance-none border rounded-xl w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     required
                   >
                     <option value="">Select Blood Group</option>
@@ -668,19 +682,19 @@ const Employee = () => {
                   </select>
                 </div>
 
-                <div className="col-span-1 sm:col-span-2 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-4">
+                <div className="col-span-1 sm:col-span-2 flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6">
                   <button
                     type="button"
                     onClick={handleCloseModal}
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto bg-gray-300 text-gray-700 px-4 py-2 rounded-xl hover:bg-gray-400 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    className="w-full sm:w-auto bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center"
                   >
                     {isSubmitting ? (
                       <>

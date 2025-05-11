@@ -18,6 +18,7 @@ import EmployeeReport from './components/EmployeeReport';
 import RoleProtected from './components/RoleProtected';
 import AdminAttendance from './components/AdminAttendance';
 import EmployeeProfile from './Pages/EmployeeProfile';
+import EmployeeAttendanceDetails from './components/EmployeeAttendanceDetails';
 
 function App() {
   const [count, setCount] = useState(0);
@@ -70,10 +71,10 @@ function App() {
               }
             />
             <Route
-              path="attendance/:id"
+              path="attendance/:employeeId"
               element={
                 <RoleProtected allowedRoles={["ADMIN"]}>
-                  <AttendanceDetails />
+                  <EmployeeAttendanceDetails />
                 </RoleProtected>
               }
             />
