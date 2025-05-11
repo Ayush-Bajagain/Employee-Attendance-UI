@@ -84,15 +84,60 @@ const Employee = () => {
     fetchDropdownOptions();
   }, []);
 
-  const handleSubmit = async (e) => {
+  const handleAddEmployee = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const endpoint = isEditMode ? `${url}/employee/update-employee` : `${url}/employee/register`;
-      
-      // Format the data according to API requirements
       const formattedData = {
-        employeeId: formData.employeeId,
+        fullName: formData.fullName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
+        gender: {
+          genderName: formData.gender
+        },
+        dob: formData.dob ? `${formData.dob}T00:00:00.000Z` : null,
+        department: {
+          departmentName: formData.department
+        },
+        position: {
+          positionName: formData.position
+        },
+        dateOfJoining: formData.dateOfJoining ? `${formData.dateOfJoining}T00:00:00.000Z` : null,
+        bloodGroupName: {
+          bloodGroupName: formData.bloodGroup
+        }
+      };
+
+      const response = await axios.post(`${url}/employee/register`, formattedData, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.data.code === 201) {
+        toast.success("Employee added successfully");
+        setShowModal(false);
+        resetForm();
+        fetchEmployees();
+      } else {
+        toast.error(response.data.message || "Failed to add employee");
+      }
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      toast.error(error.response?.data?.message || "Failed to add employee");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditEmployee = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const formattedData = {
+        employeeId: parseInt(formData.employeeId),
         fullName: formData.fullName,
         phoneNumber: formData.phoneNumber,
         gender: formData.gender,
@@ -101,13 +146,11 @@ const Employee = () => {
         dateOfJoining: formData.dateOfJoining ? `${formData.dateOfJoining}T00:00:00.000+05:45` : null,
         email: formData.email,
         address: formData.address,
-        dateOfBirth: formData.dob ? `${formData.dob}T00:00:00.000+05:45` : null,
+        dateOfBirth: formData.dob,
         position: formData.position
       };
 
-      console.log('Submitting data:', formattedData); // For debugging
-
-      const response = await axios.post(endpoint, formattedData, {
+      const response = await axios.post(`${url}/employee/update-employee`, formattedData, {
         withCredentials: true,
         headers: {
           'Content-Type': 'application/json'
@@ -115,16 +158,16 @@ const Employee = () => {
       });
       
       if (response.data.code === 201) {
-        toast.success(response.data.message || "Employee updated successfully");
+        toast.success("Employee updated successfully");
         setShowModal(false);
         resetForm();
         fetchEmployees();
       } else {
-        toast.error(response.data.message || "Failed to save employee");
+        toast.error(response.data.message || "Failed to update employee");
       }
     } catch (error) {
-      console.error('Error submitting form:', error); // For debugging
-      toast.error(error.response?.data?.message || "Failed to save employee");
+      console.error('Error updating employee:', error);
+      toast.error(error.response?.data?.message || "Failed to update employee");
     } finally {
       setIsSubmitting(false);
     }
@@ -496,7 +539,7 @@ const Employee = () => {
             <div className="mt-3">
               <div className="flex justify-between items-center mb-6 border-b pb-4">
                 <h3 className="text-xl sm:text-2xl font-bold text-gray-800">
-                  {isEditMode ? 'Edit Employee' : 'Add Employee'}
+                  {isEditMode ? 'Edit Employee' : 'Add New Employee'}
                 </h3>
                 <button
                   onClick={handleCloseModal}
@@ -507,7 +550,7 @@ const Employee = () => {
                   </svg>
                 </button>
               </div>
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <form onSubmit={isEditMode ? handleEditEmployee : handleAddEmployee} className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="col-span-1 sm:col-span-2">
                   <label className="block text-gray-700 text-sm font-semibold mb-2">
                     Full Name
@@ -705,7 +748,7 @@ const Employee = () => {
                         {isEditMode ? 'Updating...' : 'Adding...'}
                       </>
                     ) : (
-                      isEditMode ? 'Update' : 'Add'
+                      isEditMode ? 'Update Employee' : 'Add Employee'
                     )}
                   </button>
                 </div>

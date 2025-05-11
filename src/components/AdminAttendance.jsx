@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MdSearch, MdFilterList, MdDownload, MdPerson } from 'react-icons/md';
+import { MdSearch, MdDownload, MdPerson, MdChevronLeft, MdChevronRight, MdCalendarToday, MdFilterList } from 'react-icons/md';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -7,14 +7,25 @@ import { useNavigate } from 'react-router-dom';
 
 export default function AdminAttendance() {
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(true);
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
   const url = import.meta.env.VITE_BASE_URL;
+  const [filterType, setFilterType] = useState('all'); // 'all', 'today', 'monthly'
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [showMonthFilter, setShowMonthFilter] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
+    fetchAttendanceRecords();
+    fetchDepartments();
   }, []);
 
   const fetchEmployees = async () => {
@@ -31,6 +42,65 @@ export default function AdminAttendance() {
       console.error('Error fetching employees:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAttendanceRecords = async () => {
+    try {
+      const response = await axios.post(`${url}/attendance/get-all-attendance`, {}, {
+        withCredentials: true
+      });
+      
+      if (response.data.code === 200) {
+        setAttendanceRecords(response.data.data);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch attendance records');
+      console.error('Error fetching attendance records:', error);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  const fetchMonthlyRecords = async (year, month) => {
+    try {
+      setAttendanceLoading(true);
+      const response = await axios.post(`${url}/attendance/getMonthlyRecord`, {
+        year: year,
+        month: month
+      }, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.data.code === 200) {
+        console.log('Monthly records:', response.data.data); // For debugging
+        setAttendanceRecords(response.data.data);
+      } else {
+        toast.error(response.data.message || 'Failed to fetch monthly records');
+      }
+    } catch (error) {
+      console.error('Error fetching monthly records:', error);
+      toast.error(error.response?.data?.message || 'Failed to fetch monthly records');
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get(`${url}/system-config/getDepartments`, {
+        withCredentials: true
+      });
+      
+      if (response.data.code === 200) {
+        setDepartments(response.data.data);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch departments');
+      console.error('Error fetching departments:', error);
     }
   };
 
@@ -59,13 +129,107 @@ export default function AdminAttendance() {
     }
   };
 
-  // Filter employees based on search query
-  const filteredEmployees = employees.filter(employee => 
-    employee.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.department?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.position?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter employees based on search query and department
+  const filteredEmployees = employees.filter(employee => {
+    const searchLower = searchQuery.toLowerCase().trim();
+    const matchesSearch = 
+      employee.fullName?.toLowerCase().includes(searchLower) ||
+      employee.email?.toLowerCase().includes(searchLower) ||
+      employee.employeeId?.toLowerCase().includes(searchLower);
+    
+    const matchesDepartment = !selectedDepartment || employee.department === selectedDepartment;
+    
+    return matchesSearch && matchesDepartment;
+  });
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredEmployees.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = startIndex + rowsPerPage;
+  const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Reset to first page when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  // Format date function
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const handleFilterChange = (type) => {
+    setFilterType(type);
+    if (type === 'monthly') {
+      setShowMonthFilter(true);
+      // Fetch monthly records with current selected month and year
+      fetchMonthlyRecords(selectedYear, selectedMonth);
+    } else if (type === 'today') {
+      setShowMonthFilter(false);
+      const today = new Date();
+      const filteredRecords = attendanceRecords.filter(record => {
+        const recordDate = new Date(record.attendanceDate);
+        return recordDate.toDateString() === today.toDateString();
+      });
+      setAttendanceRecords(filteredRecords);
+    } else {
+      setShowMonthFilter(false);
+      fetchAttendanceRecords();
+    }
+  };
+
+  const handleMonthYearChange = (e) => {
+    const { name, value } = e.target;
+    const newValue = parseInt(value);
+    
+    if (name === 'month') {
+      setSelectedMonth(newValue);
+      fetchMonthlyRecords(selectedYear, newValue);
+    } else {
+      setSelectedYear(newValue);
+      fetchMonthlyRecords(newValue, selectedMonth);
+    }
+  };
+
+  // Add useEffect to fetch monthly records when component mounts if monthly filter is active
+  useEffect(() => {
+    if (filterType === 'monthly') {
+      fetchMonthlyRecords(selectedYear, selectedMonth);
+    }
+  }, [filterType]);
+
+  // Calculate pagination for attendance records
+  const totalPagesAttendance = Math.ceil(attendanceRecords.length / rowsPerPage);
+  const startIndexAttendance = (currentPage - 1) * rowsPerPage;
+  const endIndexAttendance = startIndexAttendance + rowsPerPage;
+  const currentRecords = attendanceRecords.slice(startIndexAttendance, endIndexAttendance);
+
+  const handleRowsPerPageChange = (e) => {
+    setRowsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing rows per page
+  };
+
+  const handleDepartmentChange = (e) => {
+    setSelectedDepartment(e.target.value);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
 
   return (
     <div className="p-6 mt-4 lg:mt-0">
@@ -92,32 +256,62 @@ export default function AdminAttendance() {
         </div>
       </div>
 
-      {/* Filters and Search */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Present</h3>
+          <p className="text-2xl font-bold text-green-600">45</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Absent</h3>
+          <p className="text-2xl font-bold text-red-600">5</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Late Arrivals</h3>
+          <p className="text-2xl font-bold text-yellow-600">3</p>
+        </div>
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">On Leave</h3>
+          <p className="text-2xl font-bold text-blue-600">2</p>
+        </div>
+      </div>
+
+      {/* Search and Filter Section */}
+      <div className="flex gap-4 mb-6">
+        {/* Search */}
+        <div className="bg-white rounded-lg shadow-md p-3 w-1/3">
           <div className="relative">
             <input
               type="text"
-              placeholder="Search employee..."
+              placeholder="Search by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-8 pr-3 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
-            <MdSearch className="absolute left-3 top-3 text-gray-400" />
+            <MdSearch className="absolute left-2 top-2.5 text-gray-400" />
           </div>
-          <div>
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <button className="flex items-center gap-2 w-full px-4 py-2 border rounded-md hover:bg-gray-50">
-              <MdFilterList />
-              Filter by Department
-            </button>
+        </div>
+
+        {/* Department Filter */}
+        <div className="bg-white rounded-lg shadow-md p-3">
+          <div className="relative">
+            <select
+              value={selectedDepartment}
+              onChange={handleDepartmentChange}
+              className="w-48 pl-3 pr-8 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none bg-white"
+            >
+              <option value="">All Departments</option>
+              {departments.map((dept) => (
+                <option key={dept.id} value={dept.departmentName}>
+                  {dept.departmentName}
+                </option>
+              ))}
+            </select>
+            <div className="absolute right-2 top-2.5 pointer-events-none">
+              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
@@ -145,14 +339,14 @@ export default function AdminAttendance() {
                     </div>
                   </td>
                 </tr>
-              ) : filteredEmployees.length === 0 ? (
+              ) : currentEmployees.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                    No employees found
+                    {searchQuery ? 'No employees found matching your search' : 'No employees found'}
                   </td>
                 </tr>
               ) : (
-                filteredEmployees.map((employee) => (
+                currentEmployees.map((employee) => (
                   <tr key={employee.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -193,25 +387,315 @@ export default function AdminAttendance() {
             </tbody>
           </table>
         </div>
+
+        {/* Pagination */}
+        {!loading && filteredEmployees.length > 0 && (
+          <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+            <div className="flex-1 flex justify-between sm:hidden">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                  <span className="font-medium">
+                    {Math.min(endIndex, filteredEmployees.length)}
+                  </span>{' '}
+                  of <span className="font-medium">{filteredEmployees.length}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <MdChevronLeft className="h-5 w-5" />
+                  </button>
+                  {[...Array(totalPages)].map((_, index) => (
+                    <button
+                      key={index + 1}
+                      onClick={() => handlePageChange(index + 1)}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        currentPage === index + 1
+                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      {index + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <MdChevronRight className="h-5 w-5" />
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Present</h3>
-          <p className="text-2xl font-bold text-green-600">45</p>
+      {/* Separator with increased spacing */}
+      <div className="my-12 flex items-center">
+        <div className="flex-grow border-t border-gray-200"></div>
+        <div className="mx-6 text-gray-500">
+          <MdCalendarToday className="w-8 h-8" />
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Absent</h3>
-          <p className="text-2xl font-bold text-red-600">5</p>
+        <div className="flex-grow border-t border-gray-200"></div>
+      </div>
+
+      {/* Attendance Records Table */}
+      <div className="mt-12">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1 bg-blue-500 rounded-full"></div>
+            <h2 className="text-3xl font-bold text-gray-800">Attendance Records</h2>
+          </div>
+          
+          {/* Filter Controls */}
+          <div className="mt-4 sm:mt-0 flex flex-wrap gap-2">
+            <button
+              onClick={() => handleFilterChange('all')}
+              className={`px-4 py-2 rounded-md text-sm font-medium ${
+                filterType === 'all'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              All Records
+            </button>
+            <button
+              onClick={() => handleFilterChange('today')}
+              className={`px-4 py-2 rounded-md text-sm font-medium ${
+                filterType === 'today'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Today
+            </button>
+            <button
+              onClick={() => handleFilterChange('monthly')}
+              className={`px-4 py-2 rounded-md text-sm font-medium ${
+                filterType === 'monthly'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Monthly
+            </button>
+          </div>
+
+          {/* Rows per page selector */}
+          <div className="mt-4 sm:mt-0 flex items-center gap-2">
+            <label className="text-sm text-gray-600">Rows per page:</label>
+            <select
+              value={rowsPerPage}
+              onChange={handleRowsPerPageChange}
+              className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+            >
+              <option value={10}>10</option>
+              <option value={15}>15</option>
+              <option value={20}>20</option>
+            </select>
+          </div>
         </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Late Arrivals</h3>
-          <p className="text-2xl font-bold text-yellow-600">3</p>
-        </div>
-        <div className="bg-white rounded-lg shadow-md p-4">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">On Leave</h3>
-          <p className="text-2xl font-bold text-blue-600">2</p>
+
+        {/* Monthly Filter Controls */}
+        {showMonthFilter && (
+          <div className="mb-4 p-4 bg-white rounded-lg shadow-sm">
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Month:</label>
+                <select
+                  name="month"
+                  value={selectedMonth}
+                  onChange={handleMonthYearChange}
+                  className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                    <option key={month} value={month}>
+                      {new Date(2000, month - 1).toLocaleString('default', { month: 'long' })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Year:</label>
+                <select
+                  name="year"
+                  value={selectedYear}
+                  onChange={handleMonthYearChange}
+                  className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check In</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {attendanceLoading ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-4 text-center">
+                      <div className="flex justify-center items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : currentRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
+                      No attendance records found
+                    </td>
+                  </tr>
+                ) : (
+                  currentRecords.map((record) => {
+                    const checkIn = new Date(record.checkInTime);
+                    const checkOut = new Date(record.checkOutTime);
+                    const duration = checkOut - checkIn;
+                    const hours = Math.floor(duration / (1000 * 60 * 60));
+                    const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
+
+                    return (
+                      <tr key={record.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                              <MdPerson className="text-gray-500" size={24} />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{record.employee.fullName}</div>
+                              <div className="text-sm text-gray-500">{record.employee.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(record.attendanceDate)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            record.status === 'Present' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {record.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatTime(record.checkInTime)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatTime(record.checkOutTime)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {`${hours}h ${minutes}m`}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Controls */}
+          {!attendanceLoading && attendanceRecords.length > 0 && (
+            <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPagesAttendance}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{startIndexAttendance + 1}</span> to{' '}
+                    <span className="font-medium">
+                      {Math.min(endIndexAttendance, attendanceRecords.length)}
+                    </span>{' '}
+                    of <span className="font-medium">{attendanceRecords.length}</span> results
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <MdChevronLeft className="h-5 w-5" />
+                    </button>
+                    {[...Array(totalPagesAttendance)].map((_, index) => (
+                      <button
+                        key={index + 1}
+                        onClick={() => handlePageChange(index + 1)}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          currentPage === index + 1
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        {index + 1}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPagesAttendance}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <MdChevronRight className="h-5 w-5" />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
