@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { FaUserPlus, FaEllipsisV } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
+import Swal from 'sweetalert2';
 
 const Employee = () => {
   const [employees, setEmployees] = useState([]);
@@ -117,16 +118,49 @@ const Employee = () => {
       });
       
       if (response.data.code === 201) {
-        toast.success("Employee added successfully");
+        await Swal.fire({
+          title: "Success!",
+          text: "Employee added successfully!",
+          icon: "success",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
         setShowModal(false);
         resetForm();
-        fetchEmployees();
+        await fetchEmployees();
       } else {
-        toast.error(response.data.message || "Failed to add employee");
+        await Swal.fire({
+          title: "Error!",
+          text: response.data.message || "Failed to add employee",
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
     } catch (error) {
       console.error('Error adding employee:', error);
-      toast.error(error.response?.data?.message || "Failed to add employee");
+      await Swal.fire({
+        title: "Error!",
+        text: error.response?.data?.message || "Failed to add employee",
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#4F46E5",
+        position: "center",
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -158,16 +192,49 @@ const Employee = () => {
       });
       
       if (response.data.code === 201) {
-        toast.success("Employee updated successfully");
+        await Swal.fire({
+          title: "Success!",
+          text: "Employee updated successfully!",
+          icon: "success",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
         setShowModal(false);
         resetForm();
-        fetchEmployees();
+        await fetchEmployees();
       } else {
-        toast.error(response.data.message || "Failed to update employee");
+        await Swal.fire({
+          title: "Error!",
+          text: response.data.message || "Failed to update employee",
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
     } catch (error) {
       console.error('Error updating employee:', error);
-      toast.error(error.response?.data?.message || "Failed to update employee");
+      await Swal.fire({
+        title: "Error!",
+        text: error.response?.data?.message || "Failed to update employee",
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#4F46E5",
+        position: "center",
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -332,56 +399,133 @@ const Employee = () => {
 
   // Function to handle delete employee
   const handleDelete = async (employee) => {
-    const confirmDelete = window.confirm(`Are you sure to delete the employee ${employee.fullName}?`);
-    
-    if (!confirmDelete) {
-      return;
-    }
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: `Do you want to delete the employee ${employee.fullName}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#4F46E5",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel"
+    });
 
-    try {
-      const response = await axios.post(`${url}/employee/delete/${employee.id}`, {}, {
-        withCredentials: true,
-      });
-      
-      if (response.data.code === 201) {
-        toast.success(response.data.message || 'Employee deleted successfully');
-        fetchEmployees(); // Refresh the list
-      } else {
-        toast.error(response.data.message || 'Failed to delete employee');
+    if (result.isConfirmed) {
+      try {
+        const response = await axios.post(`${url}/employee/delete/${employee.id}`, {}, {
+          withCredentials: true,
+        });
+        
+        if (response.data.code === 201) {
+          await Swal.fire({
+            title: "Deleted!",
+            text: response.data.message || 'Employee deleted successfully',
+            icon: "success",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#4F46E5",
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            position: "center",
+            customClass: {
+              popup: 'animated fadeInDown'
+            }
+          });
+          fetchEmployees();
+        } else {
+          await Swal.fire({
+            title: "Error!",
+            text: response.data.message || 'Failed to delete employee',
+            icon: "error",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#4F46E5",
+            position: "center",
+            customClass: {
+              popup: 'animated fadeInDown'
+            }
+          });
+        }
+      } catch (error) {
+        await Swal.fire({
+          title: "Error!",
+          text: error.response?.data?.message || 'Failed to delete employee',
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete employee');
     }
     setShowActionMenu(null);
   };
 
   // Function to handle status change
   const handleStatusChange = async (employee, status) => {
-    const confirmStatusChange = window.confirm(
-      `Are you sure you want to change the status of ${employee.fullName} from ${employee.status || 'N/A'} to ${status}?`
-    );
-    
-    if (!confirmStatusChange) {
-      setShowActionMenu(null);
-      return;
-    }
+    const result = await Swal.fire({
+      title: "Change Status?",
+      text: `Are you sure you want to change the status of ${employee.fullName} from ${employee.status || 'N/A'} to ${status}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#4F46E5",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, change it!",
+      cancelButtonText: "Cancel"
+    });
 
-    try {
-      const response = await axios.post(`${url}/employee/updateStatus`, {
-        employeeId: employee.id,
-        status: status
-      }, {
-        withCredentials: true,
-      });
-      
-      if (response.data.code === 201) {
-        toast.success(response.data.message || 'Status updated successfully');
-        fetchEmployees(); // Refresh the list
-      } else {
-        toast.error(response.data.message || 'Failed to update status');
+    if (result.isConfirmed) {
+      try {
+        const response = await axios.post(`${url}/employee/updateStatus`, {
+          employeeId: employee.id,
+          status: status
+        }, {
+          withCredentials: true,
+        });
+        
+        if (response.data.code === 201) {
+          await Swal.fire({
+            title: "Updated!",
+            text: response.data.message || 'Status updated successfully',
+            icon: "success",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#4F46E5",
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            position: "center",
+            customClass: {
+              popup: 'animated fadeInDown'
+            }
+          });
+          fetchEmployees();
+        } else {
+          await Swal.fire({
+            title: "Error!",
+            text: response.data.message || 'Failed to update status',
+            icon: "error",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#4F46E5",
+            position: "center",
+            customClass: {
+              popup: 'animated fadeInDown'
+            }
+          });
+        }
+      } catch (error) {
+        await Swal.fire({
+          title: "Error!",
+          text: error.response?.data?.message || 'Failed to update status',
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update status');
     }
     setShowActionMenu(null);
   };
@@ -437,9 +581,9 @@ const Employee = () => {
         theme="light"
       />
 
-      <div className="w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 lg:p-6 mb-4 lg:mb-8 transform hover:scale-[1.01] transition-transform duration-200">
+        <div className="bg-white rounded-2xl shadow-lg p-4 lg:p-6 mb-4 lg:mb-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div>
               <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Employee Management</h1>
@@ -496,7 +640,7 @@ const Employee = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {employees.map((employee) => (
-                    <tr key={employee.id} className="hover:bg-gray-50 transition-colors duration-150 relative">
+                    <tr key={employee.id} className="relative">
                       <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {employee.fullName || '-'}
                       </td>

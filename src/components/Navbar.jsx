@@ -9,7 +9,8 @@ import {
   MdLogout,
   MdMenu,
   MdClose,
-  MdPerson
+  MdPerson,
+  MdEventNote
 } from "react-icons/md";
 
 export default function Navbar() {
@@ -81,6 +82,7 @@ export default function Navbar() {
       return [
         { path: "/employee/dashboard", icon: <MdDashboard size={24} />, label: "Dashboard" },
         { path: "/employee/attendance", icon: <MdAccessTime size={24} />, label: "Attendance" },
+        { path: "/employee/leave-request", icon: <MdEventNote size={24} />, label: "Leave Request" },
         { path: "/employee/reports", icon: <MdAssessment size={24} />, label: "Reports" },
         { path: "/employee/profile", icon: <MdPerson size={24} />, label: "Profile" },
       ];

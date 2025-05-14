@@ -5,6 +5,7 @@ import { Provider } from "../context/ContextProvider";
 import { MdEmail, MdLock, MdClose, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Swal from 'sweetalert2';
 
 const Login = () => {
   const url = import.meta.env.VITE_BASE_URL;
@@ -75,18 +76,78 @@ const Login = () => {
       );
 
       if (response.data.code === 200) {
-        setQuickAttendanceMessage(response.data.data.message);
-        // Reset form after 2 seconds
-        setTimeout(() => {
-          setShowQuickAttendance(false);
-          setQuickAttendanceData({ email: "", password: "", action: "CHECKIN" });
-          setQuickAttendanceMessage("");
-        }, 2000);
+        if (response.data.data.code === 500) {
+          await Swal.fire({
+            title: "Error!",
+            text: response.data.data.message,
+            icon: "error",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#4F46E5",
+          })
+
+        } else {
+          // Show success message using SweetAlert2
+          await Swal.fire({
+            title: "Success!",
+            text: response.data.data.message,
+            icon: "success",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#4F46E5",
+            timer: 2000,
+            timerProgressBar: true,
+            showConfirmButton: false,
+            position: "center",
+            toast: false,
+            customClass: {
+              popup: 'animated fadeInDown'
+            }
+          });
+        }
+
+        // Reset form and close modal
+        setShowQuickAttendance(false);
+        setQuickAttendanceData({ email: "", password: "", action: "CHECKIN" });
+        setQuickAttendanceMessage("");
+      } else if (response.data.code === 500) {
+        // Show error message for server error
+        await Swal.fire({
+          title: "Server Error!",
+          text: response.data.message || "Something went wrong on the server",
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       } else {
-        setQuickAttendanceMessage(response.data.message || "Something went wrong");
+        // Show error message for other error codes
+        await Swal.fire({
+          title: "Error!",
+          text: response.data.message || "Something went wrong",
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
     } catch (err) {
-      setQuickAttendanceMessage(err.response?.data?.message || "Quick attendance failed, please try again!");
+      // Show error message using SweetAlert2
+      await Swal.fire({
+        title: "Error!",
+        text: err.response?.data?.message || "Quick attendance failed, please try again!",
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#4F46E5",
+        position: "center",
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
       console.error(err);
     }
   };
@@ -226,14 +287,6 @@ const Login = () => {
             </button>
 
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Quick Attendance</h2>
-
-            {quickAttendanceMessage && (
-              <div className={`mb-4 p-4 rounded-lg ${
-                quickAttendanceMessage.includes("already") ? "bg-yellow-50 text-yellow-700" : "bg-green-50 text-green-700"
-              }`}>
-                {quickAttendanceMessage}
-              </div>
-            )}
 
             <form onSubmit={handleQuickAttendance} className="space-y-4">
               <div>

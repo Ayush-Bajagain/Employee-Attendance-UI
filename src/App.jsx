@@ -19,6 +19,7 @@ import RoleProtected from './components/RoleProtected';
 import AdminAttendance from './components/AdminAttendance';
 import EmployeeProfile from './Pages/EmployeeProfile';
 import EmployeeAttendanceDetails from './components/EmployeeAttendanceDetails';
+import LeaveRequest from './Pages/LeaveRequest';
 
 function App() {
   const [count, setCount] = useState(0);
@@ -93,6 +94,7 @@ function App() {
             <Route path="dashboard" element={<EmployeeDashboard />} />
             <Route path="attendance" element={<Attendance />} />
             <Route path="attendance/:id" element={<AttendanceDetails />} />
+            <Route path="leave-request" element={<LeaveRequest />} />
             <Route path="reports" element={<EmployeeReport />} />
             <Route path="profile" element={<EmployeeProfile />} />
           </Route>

@@ -2,8 +2,9 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaClock, FaSignInAlt, FaSignOutAlt, FaCalendarAlt, FaUserClock, FaEllipsisV } from "react-icons/fa";
+import { FaClock, FaSignInAlt, FaSignOutAlt, FaCalendarAlt, FaUserClock, FaEllipsisV, FaCalendarPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import Swal from 'sweetalert2';
 
 const Attendance = () => {
   const url = import.meta.env.VITE_BASE_URL;
@@ -17,6 +18,13 @@ const Attendance = () => {
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef(null);
+  const [showRequestForm, setShowRequestForm] = useState(false);
+  const [requestFormData, setRequestFormData] = useState({
+    type: "check-in", // Default to check-in
+    arrivalTime: "",
+    comment: ""
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -178,6 +186,70 @@ const Attendance = () => {
     }
   };
 
+  const handleRequestAttendance = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      // Get current date and combine with selected time
+      const today = new Date().toISOString().split('T')[0];
+      const arrivalDateTime = `${today}T${requestFormData.arrivalTime}`;
+      
+      const response = await axios.post(`${url}/attendance/request`, {
+        type: requestFormData.type,
+        arrivalTime: arrivalDateTime,
+        comment: requestFormData.comment
+      }, {
+        withCredentials: true,
+      });
+
+      if (response.data.code === 201) {
+        await Swal.fire({
+          title: "Success!",
+          text: "Attendance request submitted successfully!",
+          icon: "success",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
+        setShowRequestForm(false);
+        setRequestFormData({ type: "check-in", arrivalTime: "", comment: "" });
+        fetchAttendanceRecords();
+      } else {
+        await Swal.fire({
+          title: "Error!",
+          text: response.data.message || "Failed to submit attendance request",
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
+      }
+    } catch (error) {
+      await Swal.fire({
+        title: "Error!",
+        text: error.response?.data?.message || "Failed to submit attendance request",
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#4F46E5",
+        position: "center",
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <ToastContainer
@@ -196,7 +268,7 @@ const Attendance = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Header Section */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 transform hover:scale-[1.01] transition-transform duration-200">
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div>
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">Attendance Management</h1>
@@ -222,7 +294,7 @@ const Attendance = () => {
           {/* Check In/Out Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             {/* Check In Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 transform hover:scale-[1.02] transition-all duration-200 border-t-4 border-blue-500">
+            <div className="bg-white rounded-2xl shadow-lg p-8 border-t-4 border-blue-500">
               <div className="flex items-center mb-6">
                 <div className="bg-blue-100 p-3 rounded-full mr-4">
                   <FaSignInAlt className="text-blue-600 text-2xl" />
@@ -249,7 +321,7 @@ const Attendance = () => {
             </div>
 
             {/* Check Out Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 transform hover:scale-[1.02] transition-all duration-200 border-t-4 border-green-500">
+            <div className="bg-white rounded-2xl shadow-lg p-8 border-t-4 border-green-500">
               <div className="flex items-center mb-6">
                 <div className="bg-green-100 p-3 rounded-full mr-4">
                   <FaSignOutAlt className="text-green-600 text-2xl" />
@@ -275,6 +347,138 @@ const Attendance = () => {
               </button>
             </div>
           </div>
+
+          {/* Request Attendance Card */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 mb-8 border-t-4 border-purple-500">
+            <div className="flex items-center mb-6">
+              <div className="bg-purple-100 p-3 rounded-full mr-4">
+                <FaCalendarPlus className="text-purple-600 text-2xl" />
+              </div>
+              <h2 className="text-2xl font-semibold text-gray-800">Request Attendance</h2>
+            </div>
+            <button
+              onClick={() => setShowRequestForm(true)}
+              className="w-full bg-purple-600 text-white px-6 py-4 rounded-xl hover:bg-purple-700 transition-all duration-200 transform hover:scale-[1.02] font-medium text-lg shadow-md hover:shadow-lg"
+            >
+              Request Attendance
+            </button>
+          </div>
+
+          {/* Request Attendance Form Modal */}
+          {showRequestForm && (
+            <div className="fixed inset-0 bg-white/30 backdrop-blur-[2px] overflow-y-auto h-full w-full z-50">
+              <div className="relative top-4 sm:top-10 mx-auto p-4 sm:p-6 border w-[95%] sm:w-[90%] md:w-[80%] lg:w-[500px] shadow-2xl rounded-2xl bg-white/95 backdrop-blur-md">
+                <div className="mt-3">
+                  <div className="flex justify-between items-center mb-6 border-b pb-4">
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800">
+                      Request Attendance
+                    </h3>
+                    <button
+                      onClick={() => setShowRequestForm(false)}
+                      className="text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200"
+                    >
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <form onSubmit={handleRequestAttendance} className="space-y-6">
+                    <div>
+                      <label className="block text-gray-700 text-sm font-semibold mb-3">
+                        Request Type
+                      </label>
+                      <div className="flex space-x-4">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="type"
+                            value="check-in"
+                            checked={requestFormData.type === "check-in"}
+                            onChange={(e) =>
+                              setRequestFormData({ ...requestFormData, type: e.target.value })
+                            }
+                            className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                          />
+                          <span className="text-gray-700">Check In</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            name="type"
+                            value="check-out"
+                            checked={requestFormData.type === "check-out"}
+                            onChange={(e) =>
+                              setRequestFormData({ ...requestFormData, type: e.target.value })
+                            }
+                            className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                          />
+                          <span className="text-gray-700">Check Out</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-semibold mb-2">
+                        Time
+                      </label>
+                      <input
+                        type="time"
+                        value={requestFormData.arrivalTime}
+                        onChange={(e) =>
+                          setRequestFormData({ ...requestFormData, arrivalTime: e.target.value })
+                        }
+                        className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-gray-700 text-sm font-semibold mb-2">
+                        Comment
+                      </label>
+                      <textarea
+                        value={requestFormData.comment}
+                        onChange={(e) =>
+                          setRequestFormData({ ...requestFormData, comment: e.target.value })
+                        }
+                        className="shadow-sm appearance-none border border-gray-300 rounded-xl w-full py-2.5 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 min-h-[100px]"
+                        placeholder="Describe the causes"
+                        required
+                      />
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowRequestForm(false)}
+                        disabled={isSubmitting}
+                        className="w-full sm:w-auto bg-gray-100 text-gray-700 px-6 py-2.5 rounded-xl hover:bg-gray-200 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="w-full sm:w-auto bg-purple-600 text-white px-6 py-2.5 rounded-xl hover:bg-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Submitting...
+                          </>
+                        ) : (
+                          "Submit Request"
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Attendance Records Table */}
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
@@ -314,7 +518,7 @@ const Attendance = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {attendanceRecords.map((record) => (
-                      <tr key={record.id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <tr key={record.id} className="relative">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatDateOnly(record.date)}
                         </td>

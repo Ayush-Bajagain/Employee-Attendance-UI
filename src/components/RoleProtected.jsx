@@ -18,7 +18,7 @@ export default function RoleProtected({ children, allowedRoles }) {
           setUserRole(response.data.data.role);
         }
       } catch (error) {
-        console.error("Error checking role:", error);
+        console.error("Error checking role:", error)
       } finally {
         setLoading(false);
       }
