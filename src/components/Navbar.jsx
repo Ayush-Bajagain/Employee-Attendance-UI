@@ -76,6 +76,7 @@ export default function Navbar() {
         { path: "/admin/dashboard", icon: <MdDashboard size={24} />, label: "Dashboard" },
         { path: "/admin/employees", icon: <MdPeople size={24} />, label: "Employees" },
         { path: "/admin/attendance", icon: <MdAccessTime size={24} />, label: "Attendance" },
+        { path: "/admin/leave-requests", icon: <MdEventNote size={24} />, label: "Leave Requests" },
         { path: "/admin/reports", icon: <MdAssessment size={24} />, label: "Reports" },
       ];
     } else if (userRole === "EMPLOYEE") {

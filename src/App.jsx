@@ -20,6 +20,7 @@ import AdminAttendance from './components/AdminAttendance';
 import EmployeeProfile from './Pages/EmployeeProfile';
 import EmployeeAttendanceDetails from './components/EmployeeAttendanceDetails';
 import LeaveRequest from './Pages/LeaveRequest';
+import AdminLeaveRequest from './Pages/AdminLeaveRequest';
 
 function App() {
   const [count, setCount] = useState(0);
@@ -76,6 +77,14 @@ function App() {
               element={
                 <RoleProtected allowedRoles={["ADMIN"]}>
                   <EmployeeAttendanceDetails />
+                </RoleProtected>
+              }
+            />
+            <Route
+              path="leave-requests"
+              element={
+                <RoleProtected allowedRoles={["ADMIN"]}>
+                  <AdminLeaveRequest />
                 </RoleProtected>
               }
             />
