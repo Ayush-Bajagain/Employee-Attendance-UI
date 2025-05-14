@@ -3,10 +3,13 @@ import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Swal from 'sweetalert2';
+import { MdAdd, MdClose } from 'react-icons/md';
 
 const LeaveRequest = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [leavePolicies, setLeavePolicies] = useState([]);
+  const [leaveRequests, setLeaveRequests] = useState([]);
+  const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     startDate: '',
     endDate: '',
@@ -17,24 +20,41 @@ const LeaveRequest = () => {
   const url = import.meta.env.VITE_BASE_URL;
 
   useEffect(() => {
-    const fetchLeavePolicies = async () => {
-      try {
-        const response = await axios.post(`${url}/leave-policy/get`, {}, {
-          withCredentials: true
-        });
-
-        if (response.data.code === 200) {
-          setLeavePolicies(response.data.data);
-        } else {
-          toast.error(response.data.message || "Failed to fetch leave policies");
-        }
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Failed to fetch leave policies");
-      }
-    };
-
     fetchLeavePolicies();
+    fetchLeaveRequests();
   }, [url]);
+
+  const fetchLeavePolicies = async () => {
+    try {
+      const response = await axios.post(`${url}/leave-policy/get`, {}, {
+        withCredentials: true
+      });
+
+      if (response.data.code === 200) {
+        setLeavePolicies(response.data.data);
+      } else {
+        toast.error(response.data.message || "Failed to fetch leave policies");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to fetch leave policies");
+    }
+  };
+
+  const fetchLeaveRequests = async () => {
+    try {
+      const response = await axios.post(`${url}/leave-request/get-own`, {}, {
+        withCredentials: true
+      });
+
+      if (response.data.code === 200) {
+        setLeaveRequests(response.data.data);
+      } else {
+        toast.error(response.data.message || "Failed to fetch leave requests");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to fetch leave requests");
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,6 +91,8 @@ const LeaveRequest = () => {
           leaveType: '',
           reason: ''
         });
+        setShowForm(false);
+        fetchLeaveRequests(); // Refresh the list
       } else {
         await Swal.fire({
           title: "Error!",
@@ -110,6 +132,27 @@ const LeaveRequest = () => {
     }));
   };
 
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'APPROVED':
+        return 'bg-green-100 text-green-800';
+      case 'REJECTED':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <ToastContainer
@@ -126,19 +169,99 @@ const LeaveRequest = () => {
       />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Header Section */}
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Leave Request</h1>
-                <p className="text-gray-600">Submit your leave request</p>
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">Leave Requests</h1>
+                <p className="text-gray-600">View and manage your leave requests</p>
               </div>
+              <button
+                onClick={() => setShowForm(true)}
+                className="mt-4 md:mt-0 bg-purple-600 text-white px-6 py-2 rounded-xl hover:bg-purple-700 transition-all duration-200 flex items-center gap-2"
+              >
+                <MdAdd size={20} />
+                New Leave Request
+              </button>
             </div>
           </div>
 
-          {/* Leave Request Form */}
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          {/* Leave Requests Table */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leave Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested On</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {leaveRequests.map((request, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {request.leavePolicy.leaveType}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDate(request.startDate)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDate(request.endDate)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900">
+                      {request.reason}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(request.status.status)}`}>
+                        {request.status.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatDate(request.createdAt)}
+                    </td>
+                  </tr>
+                ))}
+                {leaveRequests.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
+                      No leave requests found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Leave Request Form Modal */}
+      {showForm && (
+        <div 
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowForm(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">New Leave Request</h2>
+              <button
+                onClick={() => setShowForm(false)}
+                className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              >
+                <MdClose size={24} />
+              </button>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -224,7 +347,7 @@ const LeaveRequest = () => {
             </form>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
