@@ -1,16 +1,16 @@
 import React from 'react'
 import { Outlet } from 'react-router-dom'
-import Navbar from './components/Navbar'
+import Sidebar from './components/Sidebar'
 
-export default function Layout() {
+const Layout = () => {
   return (
-    <main className='flex h-screen w-full overflow-hidden'>
-      <Navbar />
-      <div className='flex-1 overflow-auto w-full pt-16 lg:pt-0'>
-        <div className='pt-4 lg:pt-8 '>
-          <Outlet />
-        </div>
-      </div>
-    </main>
+    <div className="flex min-h-screen bg-gray-100">
+      <Sidebar />
+      <main className="flex-1">
+        <Outlet />
+      </main>
+    </div>
   )
 }
+
+export default Layout

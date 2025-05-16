@@ -1,25 +1,24 @@
-import React from 'react'
-import { createContext, useContext, useReducer } from 'react'
-import reducer from '../reducer/reducer';
+import { createContext, useState } from 'react';
 
-const Context = createContext();
-const initial = {
-    isAuthenticated : sessionStorage.getItem("isLogged") || false
-}
-const ContextProvider = ({children}) => {
+export const AuthContext = createContext();
 
-    const [state, dispatch] = useReducer(reducer, initial);
+export const ContextProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const login = (userData) => {
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
+
+  const logout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+  };
 
   return (
-    <Context.Provider value={{state, dispatch}}>
-        {children}
-    </Context.Provider>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+      {children}
+    </AuthContext.Provider>
   );
-
-}
-
-const Provider = () => {
-    return useContext(Context)
-}
-
-export {ContextProvider, Provider};
+}; 
