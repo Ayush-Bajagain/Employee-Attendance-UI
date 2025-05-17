@@ -29,6 +29,10 @@ export default function AdminAttendance() {
   });
   const [attendanceRequests, setAttendanceRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
+  const [requestsPage, setRequestsPage] = useState(1);
+  const [requestsPerPage, setRequestsPerPage] = useState(10);
+  const [requestSearchQuery, setRequestSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
 
   useEffect(() => {
     fetchEmployees();
@@ -342,6 +346,49 @@ export default function AdminAttendance() {
       toast.error('Failed to update status');
       console.error('Error updating status:', error);
     }
+  };
+
+  // Filter attendance requests based on search query and status
+  const filteredRequests = attendanceRequests.filter(request => {
+    const searchLower = requestSearchQuery.toLowerCase().trim();
+    const matchesSearch = 
+      !requestSearchQuery || 
+      request.employee?.fullName?.toLowerCase().includes(searchLower) ||
+      request.employee?.email?.toLowerCase().includes(searchLower);
+    
+    const matchesStatus = 
+      statusFilter === 'ALL' || 
+      request.status.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Calculate pagination for filtered attendance requests
+  const totalPagesRequests = Math.ceil(filteredRequests.length / requestsPerPage);
+  const startIndexRequests = (requestsPage - 1) * requestsPerPage;
+  const endIndexRequests = startIndexRequests + requestsPerPage;
+  const currentRequests = filteredRequests.slice(startIndexRequests, endIndexRequests);
+
+  // Reset to first page when search query or status filter changes
+  useEffect(() => {
+    setRequestsPage(1);
+  }, [requestSearchQuery, statusFilter]);
+
+  const handleRequestSearchChange = (e) => {
+    setRequestSearchQuery(e.target.value);
+  };
+
+  const handleStatusFilterChange = (status) => {
+    setStatusFilter(status);
+  };
+  
+  const handleRequestsPageChange = (pageNumber) => {
+    setRequestsPage(pageNumber);
+  };
+
+  const handleRequestsPerPageChange = (e) => {
+    setRequestsPerPage(Number(e.target.value));
+    setRequestsPage(1); // Reset to first page when changing rows per page
   };
 
   return (
@@ -850,11 +897,63 @@ export default function AdminAttendance() {
             <div className="h-8 w-1 bg-purple-500 rounded-full"></div>
             <h2 className="text-3xl font-bold text-gray-800">Attendance Requests</h2>
           </div>
-          <div className="mt-4 sm:mt-0 flex items-center gap-2">
-            <span className="text-sm text-gray-500">Total Requests:</span>
-            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
-              {attendanceRequests.length}
-            </span>
+          <div className="mt-4 sm:mt-0 flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Total Requests:</span>
+              <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+                {attendanceRequests.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600">Rows per page:</label>
+              <select
+                value={requestsPerPage}
+                onChange={handleRequestsPerPageChange}
+                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Search and Filter Section for Requests */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          {/* Search Input - Made smaller */}
+          <div className="bg-white rounded-lg shadow-md p-3 md:w-64">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search employee..."
+                value={requestSearchQuery}
+                onChange={handleRequestSearchChange}
+                className="w-full pl-8 pr-3 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+              <MdSearch className="absolute left-2 top-2.5 text-gray-400" />
+            </div>
+          </div>
+
+          {/* Status Filter Dropdown */}
+          <div className="bg-white rounded-lg shadow-md p-3">
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => handleStatusFilterChange(e.target.value)}
+                className="w-48 pl-3 pr-8 py-1.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none bg-white"
+              >
+                <option value="ALL">All Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+              <div className="absolute right-2 top-2.5 pointer-events-none">
+                <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -863,6 +962,9 @@ export default function AdminAttendance() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Employee
+                  </th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Request Type
                   </th>
@@ -889,7 +991,7 @@ export default function AdminAttendance() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loadingRequests ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-4 text-center">
+                    <td colSpan="8" className="px-6 py-4 text-center">
                       <div className="flex justify-center items-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
                       </div>
@@ -897,7 +999,7 @@ export default function AdminAttendance() {
                   </tr>
                 ) : attendanceRequests.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-8 text-center">
+                    <td colSpan="8" className="px-6 py-8 text-center">
                       <div className="flex flex-col items-center justify-center text-gray-500">
                         <svg className="w-12 h-12 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -908,8 +1010,19 @@ export default function AdminAttendance() {
                     </td>
                   </tr>
                 ) : (
-                  attendanceRequests.map((request) => (
+                  currentRequests.map((request) => (
                     <tr key={request.id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                            <MdPerson className="text-gray-500" size={24} />
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{request.employee?.fullName || 'N/A'}</div>
+                            <div className="text-sm text-gray-500">{request.employee?.email || 'N/A'}</div>
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className={`p-2 rounded-full ${
@@ -1006,6 +1119,128 @@ export default function AdminAttendance() {
               </tbody>
             </table>
           </div>
+
+          {/* Show "No results found" message when filtered results are empty */}
+          {!loadingRequests && filteredRequests.length === 0 && attendanceRequests.length > 0 && (
+            <div className="px-6 py-8 text-center">
+              <div className="flex flex-col items-center justify-center text-gray-500">
+                <MdSearch className="w-12 h-12 mb-3 text-gray-400" />
+                <p className="text-lg font-medium">No matching requests found</p>
+                <p className="text-sm mt-1">Try adjusting your search or filter criteria</p>
+              </div>
+            </div>
+          )}
+
+          {/* Pagination for Requests */}
+          {!loadingRequests && filteredRequests.length > 0 && (
+            <div className="px-6 py-4 flex items-center justify-between border-t border-gray-200">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <button
+                  onClick={() => handleRequestsPageChange(requestsPage - 1)}
+                  disabled={requestsPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => handleRequestsPageChange(requestsPage + 1)}
+                  disabled={requestsPage === totalPagesRequests}
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{startIndexRequests + 1}</span> to{' '}
+                    <span className="font-medium">
+                      {Math.min(endIndexRequests, filteredRequests.length)}
+                    </span>{' '}
+                    of <span className="font-medium">{filteredRequests.length}</span> results
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => handleRequestsPageChange(requestsPage - 1)}
+                      disabled={requestsPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <MdChevronLeft className="h-5 w-5" />
+                    </button>
+                    {totalPagesRequests <= 5 ? (
+                      [...Array(totalPagesRequests)].map((_, index) => (
+                        <button
+                          key={index + 1}
+                          onClick={() => handleRequestsPageChange(index + 1)}
+                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                            requestsPage === index + 1
+                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
+                        >
+                          {index + 1}
+                        </button>
+                      ))
+                    ) : (
+                      <>
+                        {[...Array(Math.min(3, requestsPage))].map((_, index) => {
+                          const pageNum = index + 1;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => handleRequestsPageChange(pageNum)}
+                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                requestsPage === pageNum
+                                  ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                        {requestsPage > 3 && (
+                          <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                          </span>
+                        )}
+                        {requestsPage < totalPagesRequests - 2 && (
+                          <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                          </span>
+                        )}
+                        {[...Array(Math.min(3, totalPagesRequests - requestsPage + 1))].map((_, index) => {
+                          const pageNum = totalPagesRequests - index;
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => handleRequestsPageChange(pageNum)}
+                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                requestsPage === pageNum
+                                  ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        }).reverse()}
+                      </>
+                    )}
+                    <button
+                      onClick={() => handleRequestsPageChange(requestsPage + 1)}
+                      disabled={requestsPage === totalPagesRequests}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <MdChevronRight className="h-5 w-5" />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
