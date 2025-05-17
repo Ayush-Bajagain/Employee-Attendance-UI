@@ -101,7 +101,7 @@ function App() {
           {/* Employee Routes */}
           <Route path="employee">
             <Route path="dashboard" element={<EmployeeDashboard />} />
-            <Route path="attendance" element={<Attendance />} />
+          <Route path="attendance" element={<Attendance />} />
             <Route path="attendance/:id" element={<AttendanceDetails />} />
             <Route path="leave-request" element={<LeaveRequest />} />
             <Route path="reports" element={<EmployeeReport />} />

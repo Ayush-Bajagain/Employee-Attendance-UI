@@ -3,6 +3,7 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaUserPlus, FaEllipsisV } from "react-icons/fa";
+import { MdSearch, MdFilterList } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import Swal from 'sweetalert2';
@@ -38,6 +39,15 @@ const Employee = () => {
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0, width: '12rem' });
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [statusMenuPosition, setStatusMenuPosition] = useState({ left: '100%', top: 0 });
+
+  // Search and filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const url = import.meta.env.VITE_BASE_URL;
   const navigate = useNavigate();
@@ -84,6 +94,30 @@ const Employee = () => {
     fetchEmployees();
     fetchDropdownOptions();
   }, []);
+
+  // Filter employees based on search and department
+  const filteredEmployees = employees.filter(employee => {
+    const searchLower = searchTerm.toLowerCase().trim();
+    const matchesSearch = 
+      employee.fullName?.toLowerCase().includes(searchLower) ||
+      employee.email?.toLowerCase().includes(searchLower) ||
+      employee.phoneNumber?.toLowerCase().includes(searchLower);
+    
+    const matchesDepartment = !departmentFilter || employee.department === departmentFilter;
+    
+    return matchesSearch && matchesDepartment;
+  });
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, departmentFilter]);
 
   const handleAddEmployee = async (e) => {
     e.preventDefault();
@@ -206,7 +240,7 @@ const Employee = () => {
             popup: 'animated fadeInDown'
           }
         });
-        setShowModal(false);
+    setShowModal(false);
         resetForm();
         await fetchEmployees();
       } else {
@@ -411,10 +445,10 @@ const Employee = () => {
     });
 
     if (result.isConfirmed) {
-      try {
+    try {
         const response = await axios.post(`${url}/employee/delete/${employee.id}`, {}, {
-          withCredentials: true,
-        });
+        withCredentials: true,
+      });
         
         if (response.data.code === 201) {
           await Swal.fire({
@@ -432,7 +466,7 @@ const Employee = () => {
             }
           });
           fetchEmployees();
-        } else {
+      } else {
           await Swal.fire({
             title: "Error!",
             text: response.data.message || 'Failed to delete employee',
@@ -444,8 +478,8 @@ const Employee = () => {
               popup: 'animated fadeInDown'
             }
           });
-        }
-      } catch (error) {
+      }
+    } catch (error) {
         await Swal.fire({
           title: "Error!",
           text: error.response?.data?.message || 'Failed to delete employee',
@@ -479,10 +513,10 @@ const Employee = () => {
       try {
         const response = await axios.post(`${url}/employee/updateStatus`, {
           employeeId: employee.id,
-          status: status
-        }, {
-          withCredentials: true,
-        });
+        status: status
+      }, {
+        withCredentials: true,
+      });
         
         if (response.data.code === 201) {
           await Swal.fire({
@@ -500,7 +534,7 @@ const Employee = () => {
             }
           });
           fetchEmployees();
-        } else {
+      } else {
           await Swal.fire({
             title: "Error!",
             text: response.data.message || 'Failed to update status',
@@ -512,8 +546,8 @@ const Employee = () => {
               popup: 'animated fadeInDown'
             }
           });
-        }
-      } catch (error) {
+      }
+    } catch (error) {
         await Swal.fire({
           title: "Error!",
           text: error.response?.data?.message || 'Failed to update status',
@@ -581,98 +615,203 @@ const Employee = () => {
         theme="light"
       />
 
-      <div className="w-full px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-4 lg:p-6 mb-4 lg:mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Employee Management</h1>
-              <p className="text-gray-600">Manage your employee information</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Section */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">Employee Management</h1>
+                <p className="text-gray-600">Manage your employee information</p>
+              </div>
+              <button
+                onClick={() => setShowModal(true)}
+                className="mt-4 md:mt-0 flex items-center bg-blue-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 transform hover:scale-[1.02] font-medium text-base lg:text-lg shadow-md hover:shadow-lg"
+              >
+                <FaUserPlus className="mr-2" />
+                Add Employee
+              </button>
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className="mt-4 md:mt-0 flex items-center bg-blue-600 text-white px-4 lg:px-6 py-2 lg:py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 transform hover:scale-[1.02] font-medium text-base lg:text-lg shadow-md hover:shadow-lg"
-            >
-              <FaUserPlus className="mr-2" />
-              Add Employee
-            </button>
           </div>
-        </div>
 
-        {/* Employee Table */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-visible">
-          {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-            </div>
-          ) : employees.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400 text-lg">No employees found</div>
-              <p className="text-gray-500 mt-2">Add new employees to get started</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Full Name
-                    </th>
-                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phone
-                    </th>
-                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Department
-                    </th>
-                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Position
-                    </th>
-                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 lg:px-6 py-3 lg:py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {employees.map((employee) => (
-                    <tr key={employee.id} className="relative">
-                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {employee.fullName || '-'}
-                      </td>
-                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
-                        {employee.email || '-'}
-                      </td>
-                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
-                        {employee.phoneNumber || '-'}
-                      </td>
-                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
-                        {employee.department || '-'}
-                      </td>
-                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
-                        {employee.position || '-'}
-                      </td>
-                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
-                        {employee.status || '-'}
-                      </td>
-                      <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                        <button
-                          onClick={(event) => toggleActionMenu(employee.id, event)}
-                          className="text-gray-400 hover:text-gray-600 focus:outline-none action-menu-button"
+          {/* Search and Filter Section - Only show if there are employees */}
+          {!loading && employees.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
+              <div className="flex flex-col sm:flex-row gap-3 items-center">
+                <div className="relative flex-1 max-w-md">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <MdSearch className="text-gray-400" size={18} />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, or phone..."
+                    className="pl-9 pr-4 py-1.5 w-full border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                  >
+                    <MdFilterList size={18} />
+                    <span>Filter</span>
+                  </button>
+                  {showFilters && (
+                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                      <div className="p-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Department</label>
+                        <select
+                          value={departmentFilter}
+                          onChange={(e) => setDepartmentFilter(e.target.value)}
+                          className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
-                          <FaEllipsisV className="h-5 w-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          <option value="">All Departments</option>
+                          {departments.map((dept) => (
+                            <option key={dept.id} value={dept.departmentName}>
+                              {dept.departmentName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
+
+          {/* Employee Table */}
+          <div className="bg-white rounded-2xl shadow-lg overflow-visible">
+            {loading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            ) : filteredEmployees.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-400 text-lg">No employees found</div>
+                <p className="text-gray-500 mt-2">
+                  {searchTerm || departmentFilter ? 'Try adjusting your search or filters' : 'Add new employees to get started'}
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Full Name
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Department
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Position
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 lg:py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 lg:px-6 py-3 lg:py-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {currentItems.map((employee) => (
+                      <tr key={employee.id} className="relative">
+                        <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {employee.fullName || '-'}
+                        </td>
+                        <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employee.email || '-'}
+                        </td>
+                        <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employee.phoneNumber || '-'}
+                        </td>
+                        <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employee.department || '-'}
+                        </td>
+                        <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employee.position || '-'}
+                        </td>
+                        <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-sm text-gray-500">
+                          {employee.status || '-'}
+                        </td>
+                        <td className="px-4 lg:px-6 py-3 lg:py-4 whitespace-nowrap text-right text-sm font-medium relative">
+                          <button
+                            onClick={(event) => toggleActionMenu(employee.id, event)}
+                            className="text-gray-400 hover:text-gray-600 focus:outline-none action-menu-button"
+                          >
+                            <FaEllipsisV className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                          
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 px-4 py-3 border-t border-gray-200">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-700">Show</span>
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                        className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                      </select>
+                      <span className="text-sm text-gray-700">entries</span>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                                <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Previous
+                                </button>
+                      {[...Array(totalPages)].map((_, index) => (
+                                  <button
+                          key={index + 1}
+                          onClick={() => handlePageChange(index + 1)}
+                          className={`px-3 py-1 rounded-md ${
+                            currentPage === index + 1
+                              ? 'bg-blue-600 text-white'
+                              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                          }`}
+                                        >
+                          {index + 1}
+                                        </button>
+                                      ))}
+                                <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                                </button>
+                              </div>
+
+                    <div className="text-sm text-gray-700">
+                      Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredEmployees.length)} of {filteredEmployees.length} entries
+                    </div>
+                            </div>
+                          )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -88,12 +88,10 @@ const Attendance = () => {
           status: record.status
         }));
         setAttendanceRecords(formattedRecords);
-      } else {
-        toast.error(response.data.message || "Failed to fetch attendance records");
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Failed to fetch attendance records";
-      toast.error(errorMessage);
+      // Don't show error alert during loading
+      console.error('Error fetching attendance records:', error);
     } finally {
       setLoadingRecords(false);
     }
@@ -108,16 +106,46 @@ const Attendance = () => {
       });
 
       if (response.data.code === 200) {
-        const responseMessage = response.data.message;
-        toast.success(responseMessage);
+        await Swal.fire({
+          title: "Success!",
+          text: response.data.message || "Check-in successful",
+          icon: "success",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
         fetchAttendanceRecords();
       } else {
-        const errorMessage = response.data.message || "Check-in failed";
-        toast.error(errorMessage);
+        await Swal.fire({
+          title: "Error!",
+          text: response.data.message || "Check-in failed",
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Check-in failed. Please try again.";
-      toast.error(errorMessage);
+      await Swal.fire({
+        title: "Error!",
+        text: error.response?.data?.message || "Check-in failed. Please try again.",
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#4F46E5",
+        position: "center",
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
     } finally {
       setLoading(false);
     }
@@ -132,16 +160,46 @@ const Attendance = () => {
       });
 
       if (response.data.code === 200) {
-        const responseMessage = response.data.message;
-        toast.success(responseMessage);
+        await Swal.fire({
+          title: "Success!",
+          text: response.data.message || "Check-out successful",
+          icon: "success",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
         fetchAttendanceRecords();
       } else {
-        const errorMessage = response.data.message || "Check-out failed";
-        toast.error(errorMessage);
+        await Swal.fire({
+          title: "Error!",
+          text: response.data.message || "Check-out failed",
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Check-out failed. Please try again.";
-      toast.error(errorMessage);
+      await Swal.fire({
+        title: "Error!",
+        text: error.response?.data?.message || "Check-out failed. Please try again.",
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#4F46E5",
+        position: "center",
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
     } finally {
       setLoading(false);
     }
@@ -190,22 +248,22 @@ const Attendance = () => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Get current date and combine with selected time
-      const today = new Date().toISOString().split('T')[0];
-      const arrivalDateTime = `${today}T${requestFormData.arrivalTime}`;
-      
-      const response = await axios.post(`${url}/attendance/request`, {
-        type: requestFormData.type,
-        arrivalTime: arrivalDateTime,
-        comment: requestFormData.comment
-      }, {
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        `${url}/attendance-request/create`,
+        {
+          requestedType: requestFormData.type.toUpperCase(),
+          requestedTime: requestFormData.arrivalTime,
+          reason: requestFormData.comment
+        },
+        {
+          withCredentials: true,
+        }
+      );
 
       if (response.data.code === 201) {
         await Swal.fire({
           title: "Success!",
-          text: "Attendance request submitted successfully!",
+          text: response.data.message || "Attendance request submitted successfully!",
           icon: "success",
           confirmButtonText: "OK",
           confirmButtonColor: "#4F46E5",
@@ -319,6 +377,7 @@ const Attendance = () => {
                 )}
               </button>
             </div>
+
 
             {/* Check Out Card */}
             <div className="bg-white rounded-2xl shadow-lg p-8 border-t-4 border-green-500">

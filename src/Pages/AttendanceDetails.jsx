@@ -141,6 +141,7 @@ const AttendanceDetails = () => {
               </div>
 
               {/* Time Information */}
+              
               <div>
                 <h2 className="text-xl font-semibold text-gray-800 mb-6">Time Information</h2>
                 <div className="space-y-4">

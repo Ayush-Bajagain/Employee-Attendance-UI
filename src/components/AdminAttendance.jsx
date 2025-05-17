@@ -4,6 +4,7 @@ import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from 'react-router-dom';
+import { FaSignInAlt, FaSignOutAlt } from 'react-icons/fa';
 
 export default function AdminAttendance() {
   const navigate = useNavigate();
@@ -26,12 +27,15 @@ export default function AdminAttendance() {
     absent: 0,
     onLeave: 0
   });
+  const [attendanceRequests, setAttendanceRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
 
   useEffect(() => {
     fetchEmployees();
     fetchAttendanceRecords();
     fetchDepartments();
     fetchAttendanceCounts();
+    fetchAttendanceRequests();
   }, []);
 
   const fetchEmployees = async () => {
@@ -122,6 +126,27 @@ export default function AdminAttendance() {
     } catch (error) {
       toast.error('Failed to fetch attendance counts');
       console.error('Error fetching attendance counts:', error);
+    }
+  };
+
+  const fetchAttendanceRequests = async () => {
+    try {
+      const response = await axios.post(
+        `${url}/attendance-request/get-all`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
+      
+      if (response.data.code === 200) {
+        setAttendanceRequests(response.data.data);
+      }
+    } catch (error) {
+      toast.error('Failed to fetch attendance requests');
+      console.error('Error fetching attendance requests:', error);
+    } finally {
+      setLoadingRequests(false);
     }
   };
 
@@ -265,6 +290,7 @@ export default function AdminAttendance() {
           responseType: 'blob' // Important for handling file download
         }
       );
+      
 
       // Create a blob from the response data
       const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -292,6 +318,29 @@ export default function AdminAttendance() {
     } catch (error) {
       console.error('Error exporting report:', error);
       toast.error('Failed to export report');
+    }
+  };
+
+  const handleStatusUpdate = async (requestId, status) => {
+    try {
+      const response = await axios.post(
+        `${url}/attendance-request/update-status`,
+        {
+          id: requestId,
+          status: status
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (response.data.code === 201) {
+        toast.success('Status updated successfully');
+        fetchAttendanceRequests();
+      }
+    } catch (error) {
+      toast.error('Failed to update status');
+      console.error('Error updating status:', error);
     }
   };
 
@@ -782,6 +831,181 @@ export default function AdminAttendance() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Separator with increased spacing */}
+      <div className="my-12 flex items-center">
+        <div className="flex-grow border-t border-gray-200"></div>
+        <div className="mx-6 text-gray-500">
+          <MdCalendarToday className="w-8 h-8" />
+        </div>
+        <div className="flex-grow border-t border-gray-200"></div>
+      </div>
+
+      {/* Attendance Requests Section */}
+      <div className="mt-12">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-1 bg-purple-500 rounded-full"></div>
+            <h2 className="text-3xl font-bold text-gray-800">Attendance Requests</h2>
+          </div>
+          <div className="mt-4 sm:mt-0 flex items-center gap-2">
+            <span className="text-sm text-gray-500">Total Requests:</span>
+            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
+              {attendanceRequests.length}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Request Type
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Requested Date
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Requested Time
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Reason
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Created At
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loadingRequests ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-4 text-center">
+                      <div className="flex justify-center items-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                      </div>
+                    </td>
+                  </tr>
+                ) : attendanceRequests.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-8 text-center">
+                      <div className="flex flex-col items-center justify-center text-gray-500">
+                        <svg className="w-12 h-12 mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p className="text-lg font-medium">No attendance requests found</p>
+                        <p className="text-sm mt-1">Attendance requests will appear here</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  attendanceRequests.map((request) => (
+                    <tr key={request.id} className="hover:bg-gray-50 transition-colors duration-150">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className={`p-2 rounded-full ${
+                            request.requestedType.toLowerCase() === 'check in' 
+                              ? 'bg-blue-100 text-blue-600' 
+                              : 'bg-green-100 text-green-600'
+                          }`}>
+                            {request.requestedType.toLowerCase() === 'check in' ? (
+                              <FaSignInAlt className="h-4 w-4" />
+                            ) : (
+                              <FaSignOutAlt className="h-4 w-4" />
+                            )}
+                          </div>
+                          <span className="ml-3 text-sm font-medium text-gray-900">
+                            {request.requestedType}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(request.requestedDate)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {request.requestedTime}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="max-w-xs">
+                          <div className="text-sm text-gray-900 truncate" title={request.reason}>
+                            {request.reason}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          request.status.status === 'APPROVED' 
+                            ? 'bg-green-100 text-green-800'
+                            : request.status.status === 'REJECTED'
+                            ? 'bg-red-100 text-red-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {request.status.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {request.createdAt}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          {request.status.status === 'PENDING' ? (
+                            <>
+                              <button
+                                onClick={() => handleStatusUpdate(request.id, 'APPROVED')}
+                                className="inline-flex items-center justify-center p-2 bg-green-50 text-green-700 rounded-full hover:bg-green-100 transition-colors duration-150"
+                                title="Approve"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleStatusUpdate(request.id, 'REJECTED')}
+                                className="inline-flex items-center justify-center p-2 bg-red-50 text-red-700 rounded-full hover:bg-red-100 transition-colors duration-150"
+                                title="Reject"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                              <button
+                                className="inline-flex items-center justify-center p-2 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-150"
+                                title="View Details"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              className="inline-flex items-center justify-center p-2 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-150"
+                              title="View Details"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
