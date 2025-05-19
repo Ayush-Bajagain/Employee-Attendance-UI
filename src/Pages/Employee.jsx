@@ -43,6 +43,7 @@ const Employee = () => {
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
 
   // Pagination states
@@ -79,11 +80,11 @@ const Employee = () => {
         withCredentials: true,
       });
       if (response.data.code === 200) {
-        console.log('Employee data:', response.data.data); // For debugging
+       
         setEmployees(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching employees:', error); // For debugging
+ 
       toast.error("Failed to fetch employees");
     } finally {
       setLoading(false);
@@ -95,7 +96,7 @@ const Employee = () => {
     fetchDropdownOptions();
   }, []);
 
-  // Filter employees based on search and department
+  // Filter employees based on search, department and status
   const filteredEmployees = employees.filter(employee => {
     const searchLower = searchTerm.toLowerCase().trim();
     const matchesSearch = 
@@ -104,8 +105,9 @@ const Employee = () => {
       employee.phoneNumber?.toLowerCase().includes(searchLower);
     
     const matchesDepartment = !departmentFilter || employee.department === departmentFilter;
+    const matchesStatus = !statusFilter || employee.status === statusFilter;
     
-    return matchesSearch && matchesDepartment;
+    return matchesSearch && matchesDepartment && matchesStatus;
   });
 
   // Pagination logic
@@ -117,7 +119,7 @@ const Employee = () => {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, departmentFilter]);
+  }, [searchTerm, departmentFilter, statusFilter]);
 
   const handleAddEmployee = async (e) => {
     e.preventDefault();
@@ -659,7 +661,7 @@ const Employee = () => {
                     <span>Filter</span>
                   </button>
                   {showFilters && (
-                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    <div className="absolute right-0 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                       <div className="p-2">
                         <label className="block text-xs font-medium text-gray-700 mb-1">Department</label>
                         <select
@@ -671,6 +673,23 @@ const Employee = () => {
                           {departments.map((dept) => (
                             <option key={dept.id} value={dept.departmentName}>
                               {dept.departmentName}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="p-2 border-t border-gray-100">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                        <select
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">All Status</option>
+                          {statusList.map((status) => (
+                            <option key={status.id} value={status.statusName}>
+                              <span className="inline-flex items-center">
+                                {status.statusName}
+                              </span>
                             </option>
                           ))}
                         </select>
