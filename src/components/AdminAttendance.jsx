@@ -345,12 +345,20 @@ export default function AdminAttendance() {
         }
       );
 
-      if (response.data.code === 201) {
-        toast.success('Status updated successfully');
-        fetchAttendanceRequests();
+      if (response.data.code === 200) {
+        // Show the message from the API response
+        toast.success(response.data.message || 'Status updated successfully');
+        // Only refresh the requests if the status was actually updated
+        if (!response.data.message.includes('cannot')) {
+          fetchAttendanceRequests();
+        }
+      } else {
+        toast.error(response.data.message || 'Failed to update status');
       }
     } catch (error) {
-      toast.error('Failed to update status');
+      // Handle error response message if available
+      const errorMessage = error.response?.data?.message || 'Failed to update status';
+      toast.error(errorMessage);
       console.error('Error updating status:', error);
     }
   };
