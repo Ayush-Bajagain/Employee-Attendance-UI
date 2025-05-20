@@ -11,6 +11,8 @@ const Attendance = () => {
   
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [checkInLoading, setCheckInLoading] = useState(false);
+  const [checkOutLoading, setCheckOutLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [currentTime, setCurrentTime] = useState(new Date());
   const [attendanceRecords, setAttendanceRecords] = useState([]);
@@ -98,7 +100,7 @@ const Attendance = () => {
   };
 
   const handleCheckIn = async () => {
-    setLoading(true);
+    setCheckInLoading(true);
 
     try {
       const response = await axios.post(`${url}/attendance/check-in`, {}, {
@@ -147,12 +149,12 @@ const Attendance = () => {
         }
       });
     } finally {
-      setLoading(false);
+      setCheckInLoading(false);
     }
   };
 
   const handleCheckOut = async () => {
-    setLoading(true);
+    setCheckOutLoading(true);
 
     try {
       const response = await axios.post(`${url}/attendance/checkout`, {}, {
@@ -201,7 +203,7 @@ const Attendance = () => {
         }
       });
     } finally {
-      setLoading(false);
+      setCheckOutLoading(false);
     }
   };
 
@@ -361,10 +363,10 @@ const Attendance = () => {
               </div>
               <button
                 onClick={handleCheckIn}
-                disabled={loading}
+                disabled={checkInLoading || checkOutLoading}
                 className="w-full bg-blue-600 text-white px-6 py-4 rounded-xl hover:bg-blue-700 disabled:bg-blue-400 transition-all duration-200 transform hover:scale-[1.02] font-medium text-lg shadow-md hover:shadow-lg"
               >
-                {loading ? (
+                {checkInLoading ? (
                   <span className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -389,10 +391,10 @@ const Attendance = () => {
               </div>
               <button
                 onClick={handleCheckOut}
-                disabled={loading}
+                disabled={checkInLoading || checkOutLoading}
                 className="w-full bg-green-600 text-white px-6 py-4 rounded-xl hover:bg-green-700 disabled:bg-green-400 transition-all duration-200 transform hover:scale-[1.02] font-medium text-lg shadow-md hover:shadow-lg"
               >
-                {loading ? (
+                {checkOutLoading ? (
                   <span className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

@@ -10,7 +10,7 @@ const AdminLeaveRequest = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [updatingStatus, setUpdatingStatus] = useState(null);
+  const [updatingStatus, setUpdatingStatus] = useState({});
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +69,9 @@ const AdminLeaveRequest = () => {
 
   const handleStatusUpdate = async (requestId, status) => {
     try {
-      setUpdatingStatus(requestId);
+      // Set loading state for specific request and action
+      setUpdatingStatus(prev => ({ ...prev, [requestId]: status }));
+
       const response = await axios.post(`${url}/leave-request/update-status`, {
         id: requestId,
         status: status
@@ -130,7 +132,12 @@ const AdminLeaveRequest = () => {
         }
       });
     } finally {
-      setUpdatingStatus(null);
+      // Clear loading state for specific request and action
+      setUpdatingStatus(prev => {
+        const newState = { ...prev };
+        delete newState[requestId];
+        return newState;
+      });
     }
   };
 
@@ -281,7 +288,7 @@ const AdminLeaveRequest = () => {
                               }}
                               className="text-blue-600 hover:text-blue-900"
                               title="View Details"
-                              disabled={updatingStatus === request.id}
+                              disabled={updatingStatus[request.id]}
                             >
                               <MdVisibility size={20} />
                             </button>
@@ -291,9 +298,9 @@ const AdminLeaveRequest = () => {
                                   onClick={() => handleStatusUpdate(request.id, 'APPROVED')}
                                   className="text-green-600 hover:text-green-900 disabled:opacity-50 disabled:cursor-not-allowed"
                                   title="Approve"
-                                  disabled={updatingStatus === request.id}
+                                  disabled={updatingStatus[request.id]}
                                 >
-                                  {updatingStatus === request.id ? (
+                                  {updatingStatus[request.id] === 'APPROVED' ? (
                                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
                                   ) : (
                                     <MdCheck size={20} />
@@ -303,9 +310,9 @@ const AdminLeaveRequest = () => {
                                   onClick={() => handleStatusUpdate(request.id, 'REJECTED')}
                                   className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed"
                                   title="Reject"
-                                  disabled={updatingStatus === request.id}
+                                  disabled={updatingStatus[request.id]}
                                 >
-                                  {updatingStatus === request.id ? (
+                                  {updatingStatus[request.id] === 'REJECTED' ? (
                                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-600"></div>
                                   ) : (
                                     <MdClose size={20} />
