@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MdSearch, MdDownload, MdPerson, MdChevronLeft, MdChevronRight, MdCalendarToday, MdFilterList, MdEventBusy, MdClose } from 'react-icons/md';
 import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import Swal from 'sweetalert2';
 import { useNavigate } from 'react-router-dom';
 import { FaSignInAlt, FaSignOutAlt } from 'react-icons/fa';
 
@@ -55,7 +54,12 @@ export default function AdminAttendance() {
         setEmployees(response.data.data);
       }
     } catch (error) {
-      toast.error('Failed to fetch employees');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to fetch employees',
+        confirmButtonColor: '#3085d6'
+      });
       console.error('Error fetching employees:', error);
     } finally {
       setLoading(false);
@@ -72,7 +76,12 @@ export default function AdminAttendance() {
         setAttendanceRecords(response.data.data);
       }
     } catch (error) {
-      toast.error('Failed to fetch attendance records');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to fetch attendance records',
+        confirmButtonColor: '#3085d6'
+      });
       console.error('Error fetching attendance records:', error);
     } finally {
       setAttendanceLoading(false);
@@ -97,14 +106,24 @@ export default function AdminAttendance() {
       );
       
       if (response.data.code === 200) {
-        console.log('Monthly records:', response.data.data); // For debugging
+        console.log('Monthly records:', response.data.data);
         setAttendanceRecords(response.data.data);
       } else {
-        toast.error(response.data.message || 'Failed to fetch monthly records');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: response.data.message || 'Failed to fetch monthly records',
+          confirmButtonColor: '#3085d6'
+        });
       }
     } catch (error) {
       console.error('Error fetching monthly records:', error);
-      toast.error(error.response?.data?.message || 'Failed to fetch monthly records');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.response?.data?.message || 'Failed to fetch monthly records',
+        confirmButtonColor: '#3085d6'
+      });
     } finally {
       setAttendanceLoading(false);
     }
@@ -120,7 +139,12 @@ export default function AdminAttendance() {
         setDepartments(response.data.data);
       }
     } catch (error) {
-      toast.error('Failed to fetch departments');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to fetch departments',
+        confirmButtonColor: '#3085d6'
+      });
       console.error('Error fetching departments:', error);
     }
   };
@@ -135,7 +159,12 @@ export default function AdminAttendance() {
         setAttendanceCounts(response.data.data);
       }
     } catch (error) {
-      toast.error('Failed to fetch attendance counts');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to fetch attendance counts',
+        confirmButtonColor: '#3085d6'
+      });
       console.error('Error fetching attendance counts:', error);
     }
   };
@@ -154,7 +183,12 @@ export default function AdminAttendance() {
         setAttendanceRequests(response.data.data);
       }
     } catch (error) {
-      toast.error('Failed to fetch attendance requests');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to fetch attendance requests',
+        confirmButtonColor: '#3085d6'
+      });
       console.error('Error fetching attendance requests:', error);
     } finally {
       setLoadingRequests(false);
@@ -298,11 +332,10 @@ export default function AdminAttendance() {
         },
         {
           withCredentials: true,
-          responseType: 'blob' // Important for handling file download
+          responseType: 'blob'
         }
       );
       
-
       // Create a blob from the response data
       const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       
@@ -325,10 +358,20 @@ export default function AdminAttendance() {
       // Clean up the URL
       window.URL.revokeObjectURL(url);
       
-      toast.success('Report exported successfully');
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Report exported successfully',
+        confirmButtonColor: '#3085d6'
+      });
     } catch (error) {
       console.error('Error exporting report:', error);
-      toast.error('Failed to export report');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to export report',
+        confirmButtonColor: '#3085d6'
+      });
     }
   };
 
@@ -347,18 +390,34 @@ export default function AdminAttendance() {
 
       if (response.data.code === 200) {
         // Show the message from the API response
-        toast.success(response.data.message || 'Status updated successfully');
+        Swal.fire({
+          icon: response.data.message.includes('cannot') ? 'warning' : 'success',
+          title: response.data.message.includes('cannot') ? 'Warning' : 'Success',
+          text: response.data.message || 'Status updated successfully',
+          confirmButtonColor: '#3085d6'
+        });
+        
         // Only refresh the requests if the status was actually updated
         if (!response.data.message.includes('cannot')) {
           fetchAttendanceRequests();
         }
       } else {
-        toast.error(response.data.message || 'Failed to update status');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: response.data.message || 'Failed to update status',
+          confirmButtonColor: '#3085d6'
+        });
       }
     } catch (error) {
       // Handle error response message if available
       const errorMessage = error.response?.data?.message || 'Failed to update status';
-      toast.error(errorMessage);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: errorMessage,
+        confirmButtonColor: '#3085d6'
+      });
       console.error('Error updating status:', error);
     }
   };
@@ -419,10 +478,20 @@ export default function AdminAttendance() {
         setSelectedRequest(response.data.data);
         setShowViewModal(true);
       } else {
-        toast.error(response.data.message || 'Failed to fetch request details');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: response.data.message || 'Failed to fetch request details',
+          confirmButtonColor: '#3085d6'
+        });
       }
     } catch (error) {
-      toast.error('Failed to fetch request details');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to fetch request details',
+        confirmButtonColor: '#3085d6'
+      });
       console.error('Error fetching request details:', error);
     } finally {
       setViewLoading(false);
@@ -521,19 +590,6 @@ export default function AdminAttendance() {
 
   return (
     <div className="p-6 mt-4 lg:mt-0">
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Employee Management</h1>
         <div className="flex items-center gap-4">
@@ -1012,8 +1068,6 @@ export default function AdminAttendance() {
           )}
         </div>
       </div>
-
-      
 
       {/* Separator with increased spacing */}
       <div className="my-12 flex items-center">
