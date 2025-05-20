@@ -105,11 +105,11 @@ export default function Navbar() {
   return (
     <>
       {/* Mobile Header */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-b from-slate-800 to-slate-900 shadow-sm z-50 lg:hidden">
+      <div className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-blue-600 to-blue-700 shadow-sm z-50 lg:hidden">
         <div className="container mx-auto px-4 h-full flex items-center justify-between">
           <button
             onClick={toggleMenu}
-            className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-slate-800"
+            className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors focus:outline-none focus:ring-2 focus:ring-white/50 focus:ring-offset-2 focus:ring-offset-blue-600"
             aria-label="Toggle menu"
           >
             {isMenuOpen ? <MdClose size={24} /> : <MdMenu size={24} />}
@@ -120,24 +120,24 @@ export default function Navbar() {
       </div>
 
       {/* Navigation */}
-      <nav className={`fixed top-0 left-0 h-full bg-gradient-to-b from-slate-800 to-slate-900 w-[250px] p-6 flex flex-col items-center shadow-lg transition-transform duration-300 ease-in-out z-40
+      <nav className={`fixed top-0 left-0 h-full bg-gradient-to-b from-blue-600 to-blue-700 w-[250px] p-6 flex flex-col items-center shadow-lg transition-transform duration-300 ease-in-out z-40
         ${isMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${isMenuOpen ? 'top-16' : 'top-0 lg:top-0'}`}>
         <div className="logo mb-6">
-          <h2 className="text-slate-100 font-semibold text-2xl text-center">
+          <h2 className="text-white font-semibold text-2xl text-center">
             Employee Attendance
           </h2>
         </div>
 
-        <ul className="text-slate-300 text-lg w-full flex flex-col gap-2">
+        <ul className="text-blue-50 text-lg w-full flex flex-col gap-2">
           {navItems.map((item) => (
             <li key={item.path}>
               <Link
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200 ${
                   isActive(item.path)
-                    ? "bg-indigo-500/80 text-white shadow-md"
-                    : "hover:bg-slate-700/50 hover:text-white"
+                    ? "bg-blue-500 text-white shadow-md"
+                    : "hover:bg-blue-500/20 hover:text-white"
                 }`}
               >
                 {item.icon}
@@ -149,7 +149,7 @@ export default function Navbar() {
           <li>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-2 rounded-lg w-full text-rose-300 hover:bg-rose-500/20 hover:text-rose-200 transition-all duration-200"
+              className="flex items-center gap-3 px-4 py-2 rounded-lg w-full text-blue-50 hover:bg-blue-500/20 hover:text-white transition-all duration-200"
             >
               <MdLogout size={24} />
               <span>Logout</span>
@@ -161,7 +161,7 @@ export default function Navbar() {
       {/* Overlay for mobile */}
       {isMenuOpen && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden" 
+          className="fixed inset-0 bg-blue-900/40 backdrop-blur-sm z-30 lg:hidden" 
           style={{ top: '4rem' }}
           onClick={() => setIsMenuOpen(false)}
         />

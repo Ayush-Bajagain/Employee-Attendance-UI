@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MdSearch, MdDownload, MdPerson, MdChevronLeft, MdChevronRight, MdCalendarToday, MdFilterList, MdEventBusy } from 'react-icons/md';
+import { MdSearch, MdDownload, MdPerson, MdChevronLeft, MdChevronRight, MdCalendarToday, MdFilterList, MdEventBusy, MdClose } from 'react-icons/md';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -33,6 +33,9 @@ export default function AdminAttendance() {
   const [requestsPerPage, setRequestsPerPage] = useState(10);
   const [requestSearchQuery, setRequestSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewLoading, setViewLoading] = useState(false);
 
   useEffect(() => {
     fetchEmployees();
@@ -79,15 +82,19 @@ export default function AdminAttendance() {
   const fetchMonthlyRecords = async (year, month) => {
     try {
       setAttendanceLoading(true);
-      const response = await axios.post(`${url}/attendance/getMonthlyRecord`, {
-        year: year,
-        month: month
-      }, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json'
+      const response = await axios.post(
+        `${url}/attendance/get-monthly-records-of-all-employee`,
+        {
+          year: year,
+          month: month
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
-      });
+      );
       
       if (response.data.code === 200) {
         console.log('Monthly records:', response.data.data); // For debugging
@@ -132,7 +139,7 @@ export default function AdminAttendance() {
       console.error('Error fetching attendance counts:', error);
     }
   };
-
+  
   const fetchAttendanceRequests = async () => {
     try {
       const response = await axios.post(
@@ -389,6 +396,119 @@ export default function AdminAttendance() {
   const handleRequestsPerPageChange = (e) => {
     setRequestsPerPage(Number(e.target.value));
     setRequestsPage(1); // Reset to first page when changing rows per page
+  };
+
+  const handleViewRequest = async (requestId) => {
+    try {
+      setViewLoading(true);
+      const response = await axios.post(
+        `${url}/attendance-request/get`,
+        { id: requestId },
+        { withCredentials: true }
+      );
+      
+      if (response.data.code === 200) {
+        setSelectedRequest(response.data.data);
+        setShowViewModal(true);
+      } else {
+        toast.error(response.data.message || 'Failed to fetch request details');
+      }
+    } catch (error) {
+      toast.error('Failed to fetch request details');
+      console.error('Error fetching request details:', error);
+    } finally {
+      setViewLoading(false);
+    }
+  };
+
+  const ViewRequestModal = ({ request, onClose }) => {
+    if (!request) return null;
+
+    return (
+      <div className="fixed inset-0 bg-white/30 backdrop-blur-md flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white z-10 flex justify-between items-center p-6 border-b">
+            <h3 className="text-xl font-semibold text-gray-800">Request Details</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <MdClose size={24} />
+            </button>
+          </div>
+          
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Employee Name</h4>
+                <p className="mt-1 text-gray-900">{request.employee.fullName}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Email</h4>
+                <p className="mt-1 text-gray-900">{request.employee.email}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Phone Number</h4>
+                <p className="mt-1 text-gray-900">{request.employee.phoneNumber}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Request Type</h4>
+                <p className="mt-1 text-gray-900">{request.requestedType}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Requested Date</h4>
+                <p className="mt-1 text-gray-900">{formatDate(request.requestedDate)}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Requested Time</h4>
+                <p className="mt-1 text-gray-900">{request.requestedTime}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Status</h4>
+                <span className={`mt-1 px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                  request.status.status === 'APPROVED' 
+                    ? 'bg-green-100 text-green-800'
+                    : request.status.status === 'REJECTED'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {request.status.status}
+                </span>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Created At</h4>
+                <p className="mt-1 text-gray-900">{request.createdAt}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Updated At</h4>
+                <p className="mt-1 text-gray-900">{request.updatedAt}</p>
+              </div>
+            </div>
+            
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-gray-500">Reason</h4>
+              <p className="mt-1 text-gray-900 bg-gray-50 p-3 rounded-md">{request.reason}</p>
+            </div>
+            
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-gray-500">Admin Remark</h4>
+              <p className="mt-1 text-gray-900 bg-gray-50 p-3 rounded-md">
+                {request.adminRemark || 'No remarks added'}
+              </p>
+            </div>
+          </div>
+          
+          <div className="sticky bottom-0 bg-white p-6 border-t flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -769,9 +889,9 @@ export default function AdminAttendance() {
                   </tr>
                 ) : (
                   currentRecords.map((record) => {
-                    const checkIn = new Date(record.checkInTime);
-                    const checkOut = new Date(record.checkOutTime);
-                    const duration = checkOut - checkIn;
+                    const checkIn = record.checkInTime ? new Date(record.checkInTime) : null;
+                    const checkOut = record.checkOutTime ? new Date(record.checkOutTime) : null;
+                    const duration = checkIn && checkOut ? checkOut - checkIn : 0;
                     const hours = Math.floor(duration / (1000 * 60 * 60));
                     const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
 
@@ -783,8 +903,8 @@ export default function AdminAttendance() {
                               <MdPerson className="text-gray-500" size={24} />
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{record.employee.fullName}</div>
-                              <div className="text-sm text-gray-500">{record.employee.email}</div>
+                              <div className="text-sm font-medium text-gray-900">{record.employee?.fullName || 'N/A'}</div>
+                              <div className="text-sm text-gray-500">{record.employee?.email || 'N/A'}</div>
                             </div>
                           </div>
                         </td>
@@ -793,19 +913,23 @@ export default function AdminAttendance() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            record.status === 'Present' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            record.status === 'PRESENT' 
+                              ? 'bg-green-100 text-green-800'
+                              : record.status === 'LEAVE'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
                           }`}>
                             {record.status}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatTime(record.checkInTime)}
+                          {record.checkInTime ? formatTime(record.checkInTime) : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatTime(record.checkOutTime)}
+                          {record.checkOutTime ? formatTime(record.checkOutTime) : 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {`${hours}h ${minutes}m`}
+                          {checkIn && checkOut ? `${hours}h ${minutes}m` : 'N/A'}
                         </td>
                       </tr>
                     );
@@ -880,6 +1004,8 @@ export default function AdminAttendance() {
           )}
         </div>
       </div>
+
+      
 
       {/* Separator with increased spacing */}
       <div className="my-12 flex items-center">
@@ -1091,6 +1217,7 @@ export default function AdminAttendance() {
                                 </svg>
                               </button>
                               <button
+                                onClick={() => handleViewRequest(request.id)}
                                 className="inline-flex items-center justify-center p-2 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-150"
                                 title="View Details"
                               >
@@ -1102,6 +1229,7 @@ export default function AdminAttendance() {
                             </>
                           ) : (
                             <button
+                              onClick={() => handleViewRequest(request.id)}
                               className="inline-flex items-center justify-center p-2 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-150"
                               title="View Details"
                             >
@@ -1243,6 +1371,16 @@ export default function AdminAttendance() {
           )}
         </div>
       </div>
+
+      {showViewModal && (
+        <ViewRequestModal
+          request={selectedRequest}
+          onClose={() => {
+            setShowViewModal(false);
+            setSelectedRequest(null);
+          }}
+        />
+      )}
     </div>
   );
 } 
