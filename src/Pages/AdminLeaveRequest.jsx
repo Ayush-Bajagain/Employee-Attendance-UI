@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import Swal from 'sweetalert2';
 import { MdCheck, MdClose, MdVisibility, MdSearch, MdFilterList } from 'react-icons/md';
 
@@ -58,10 +56,34 @@ const AdminLeaveRequest = () => {
       if (response.data.code === 200) {
         setLeaveRequests(response.data.data);
       } else {
-        toast.error(response.data.message || "Failed to fetch leave requests");
+        if (response.data.message && response.data.message !== "No leave requests found") {
+          await Swal.fire({
+            title: "Error!",
+            text: response.data.message,
+            icon: "error",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#4F46E5",
+            position: "center",
+            customClass: {
+              popup: 'animated fadeInDown'
+            }
+          });
+        }
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to fetch leave requests");
+      if (error.response?.data?.message && error.response.data.message !== "No leave requests found") {
+        await Swal.fire({
+          title: "Error!",
+          text: error.response.data.message,
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -164,19 +186,6 @@ const AdminLeaveRequest = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header Section */}

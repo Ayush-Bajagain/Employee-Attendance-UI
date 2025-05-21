@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { MdAccessTime, MdCalendarToday, MdEventNote, MdPerson, MdWork, MdNotifications } from 'react-icons/md';
+import { MdAccessTime, MdPerson, MdWork, MdEventNote, MdCalendarToday } from 'react-icons/md';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 
 export default function EmployeeDashboard() {
   const [employeeData, setEmployeeData] = useState(null);
   const [attendanceData, setAttendanceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [leaveRequests, setLeaveRequests] = useState([]);
 
   const url = import.meta.env.VITE_BASE_URL;
 
@@ -28,9 +30,28 @@ export default function EmployeeDashboard() {
         if (attendanceResponse.data.code === 200) {
           setAttendanceData(attendanceResponse.data.data);
         }
+
+        // Fetch leave requests
+        const leaveResponse = await axios.post(`${url}/leave-request/get-own`, {}, {
+          withCredentials: true
+        });
+        if (leaveResponse.data.code === 200) {
+          setLeaveRequests(leaveResponse.data.data);
+        }
       } catch (err) {
         setError('Failed to fetch data');
         console.error('Error fetching data:', err);
+        await Swal.fire({
+          title: "Error!",
+          text: 'Failed to fetch data',
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       } finally {
         setLoading(false);
       }
@@ -48,6 +69,30 @@ export default function EmployeeDashboard() {
       minute: '2-digit',
       hour12: true  
     });
+  };
+
+  // Format date function
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status?.toUpperCase()) {
+      case 'PENDING':
+        return 'text-yellow-600';
+      case 'APPROVED':
+        return 'text-green-600';
+      case 'REJECTED':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
   };
 
   if (loading) {
@@ -74,16 +119,10 @@ export default function EmployeeDashboard() {
         <h1 className="text-2xl font-semibold text-gray-800">
           Welcome back, {employeeData?.fullName}
         </h1>
-        {/* <div className="flex items-center gap-4 bg-red-500">
-          <button className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors">
-            <MdNotifications size={20} />
-            <span>Mark Attendance</span>
-          </button>
-        </div> */}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Today's Status */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-700">Today's Status</h2>
@@ -96,85 +135,69 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
+        {/* Profile Information */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">This Month</h2>
-            <MdCalendarToday className="text-purple-500 text-2xl" />
-          </div>
-          <div className="space-y-2">
-            <p className="text-gray-600">Present Days: <span className="font-medium">20</span></p>
-            <p className="text-gray-600">Absent Days: <span className="font-medium">1</span></p>
-            <p className="text-gray-600">Leave Days: <span className="font-medium">2</span></p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">Leave Balance</h2>
-            <MdWork className="text-orange-500 text-2xl" />
-          </div>
-          <div className="space-y-2">
-            <p className="text-gray-600">Annual Leave: <span className="font-medium">12 days</span></p>
-            <p className="text-gray-600">Sick Leave: <span className="font-medium">5 days</span></p>
-            <p className="text-gray-600">Casual Leave: <span className="font-medium">3 days</span></p>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">Profile Status</h2>
+            <h2 className="text-lg font-semibold text-gray-700">Profile Information</h2>
             <MdPerson className="text-green-500 text-2xl" />
           </div>
           <div className="space-y-2">
             <p className="text-gray-600">Department: <span className="font-medium">{employeeData?.department}</span></p>
             <p className="text-gray-600">Position: <span className="font-medium">{employeeData?.position}</span></p>
             <p className="text-gray-600">Employee ID: <span className="font-medium">{employeeData?.id}</span></p>
+            <p className="text-gray-600">Email: <span className="font-medium">{employeeData?.email}</span></p>
           </div>
         </div>
       </div>
 
-      {/* Recent Activities and Upcoming Events */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">Recent Activities</h2>
-            <MdEventNote className="text-orange-500 text-2xl" />
-          </div>
-          <div className="space-y-4">
-            <div className="border-l-2 border-green-500 pl-3">
-              <p className="text-sm text-gray-600">Check-in at 9:00 AM</p>
-              <p className="text-xs text-gray-500">Today, 9:00 AM</p>
-            </div>
-            <div className="border-l-2 border-red-500 pl-3">
-              <p className="text-sm text-gray-600">Leave Request Approved</p>
-              <p className="text-xs text-gray-500">Yesterday, 2:30 PM</p>
-            </div>
-            <div className="border-l-2 border-blue-500 pl-3">
-              <p className="text-sm text-gray-600">Check-out at 6:00 PM</p>
-              <p className="text-xs text-gray-500">Yesterday, 6:00 PM</p>
-            </div>
-          </div>
+      {/* Recent Leave Requests */}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-700">Recent Leave Requests</h2>
+          <MdEventNote className="text-orange-500 text-2xl" />
         </div>
-
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-700">Upcoming Events</h2>
-            <MdCalendarToday className="text-purple-500 text-2xl" />
-          </div>
-          <div className="space-y-4">
-            <div className="border-l-2 border-purple-500 pl-3">
-              <p className="text-sm text-gray-600">Team Meeting</p>
-              <p className="text-xs text-gray-500">Tomorrow, 10:00 AM</p>
-            </div>
-            <div className="border-l-2 border-blue-500 pl-3">
-              <p className="text-sm text-gray-600">Project Deadline</p>
-              <p className="text-xs text-gray-500">Next Monday</p>
-            </div>
-            <div className="border-l-2 border-green-500 pl-3">
-              <p className="text-sm text-gray-600">Performance Review</p>
-              <p className="text-xs text-gray-500">Next Friday</p>
-            </div>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leave Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested On</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {leaveRequests.slice(0, 5).map((request, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {request.leavePolicy.leaveType}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatDate(request.startDate)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatDate(request.endDate)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={`font-medium ${getStatusColor(request.status.status)}`}>
+                      {request.status.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatDate(request.createdAt)}
+                  </td>
+                </tr>
+              ))}
+              {leaveRequests.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                    No leave requests found
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

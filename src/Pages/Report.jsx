@@ -53,10 +53,30 @@ export default function Report() {
       if (response.data.code === 200) {
         setStats(response.data.data);
       } else {
-        toast.error(response.data.message || 'Failed to fetch report data');
+        await Swal.fire({
+          title: "Error!",
+          text: response.data.message || 'Failed to fetch report data',
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
     } catch (error) {
-      toast.error('Failed to fetch report data');
+      await Swal.fire({
+        title: "Error!",
+        text: 'Failed to fetch report data',
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#4F46E5",
+        position: "center",
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
       console.error('Error fetching report data:', error);
     } finally {
       setLoading(false);
@@ -178,10 +198,30 @@ export default function Report() {
       if (response.data.code === 200) {
         setAttendanceRecords(response.data.data);
       } else {
-        toast.error(response.data.message || 'Failed to fetch attendance records');
+        await Swal.fire({
+          title: "Error!",
+          text: response.data.message || 'Failed to fetch attendance records',
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
     } catch (error) {
-      toast.error('Failed to fetch attendance records');
+      await Swal.fire({
+        title: "Error!",
+        text: 'Failed to fetch attendance records',
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#4F46E5",
+        position: "center",
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
       console.error('Error fetching attendance records:', error);
     } finally {
       setAttendanceLoading(false);
@@ -250,10 +290,30 @@ export default function Report() {
       if (response.data.code === 200) {
         setAttendanceRecords(response.data.data);
       } else {
-        toast.error(response.data.message || 'Failed to fetch monthly records');
+        await Swal.fire({
+          title: "Error!",
+          text: response.data.message || 'Failed to fetch monthly records',
+          icon: "error",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          position: "center",
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
       }
     } catch (error) {
-      toast.error('Failed to fetch monthly records');
+      await Swal.fire({
+        title: "Error!",
+        text: 'Failed to fetch monthly records',
+        icon: "error",
+        confirmButtonText: "OK",
+        confirmButtonColor: "#4F46E5",
+        position: "center",
+        customClass: {
+          popup: 'animated fadeInDown'
+        }
+      });
       console.error('Error fetching monthly records:', error);
     } finally {
       setAttendanceLoading(false);

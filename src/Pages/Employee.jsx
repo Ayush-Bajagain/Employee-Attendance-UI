@@ -121,6 +121,10 @@ const Employee = () => {
     setCurrentPage(1);
   }, [searchTerm, departmentFilter, statusFilter]);
 
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   const handleAddEmployee = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -787,22 +791,22 @@ const Employee = () => {
                         className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value={10}>10</option>
-                        <option value={25}>25</option>
+                        <option value={20}>20</option>
                         <option value={50}>50</option>
                       </select>
                       <span className="text-sm text-gray-700">entries</span>
                     </div>
 
                     <div className="flex items-center space-x-2">
-                                <button
+                      <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
                         className="px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Previous
-                                </button>
+                      </button>
                       {[...Array(totalPages)].map((_, index) => (
-                                  <button
+                        <button
                           key={index + 1}
                           onClick={() => handlePageChange(index + 1)}
                           className={`px-3 py-1 rounded-md ${
@@ -810,24 +814,24 @@ const Employee = () => {
                               ? 'bg-blue-600 text-white'
                               : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
                           }`}
-                                        >
+                        >
                           {index + 1}
-                                        </button>
-                                      ))}
-                                <button
+                        </button>
+                      ))}
+                      <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
                         className="px-3 py-1 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         Next
-                                </button>
-                              </div>
+                      </button>
+                    </div>
 
                     <div className="text-sm text-gray-700">
                       Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredEmployees.length)} of {filteredEmployees.length} entries
                     </div>
-                            </div>
-                          )}
+                  </div>
+                )}
               </div>
             )}
           </div>

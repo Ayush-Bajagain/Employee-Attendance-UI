@@ -22,6 +22,7 @@ const Login = () => {
   const navigate = useNavigate();
   const { dispatch } = Provider();
   const [showPassword, setShowPassword] = useState(false);
+  const [showQuickAttendancePassword, setShowQuickAttendancePassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e) => {
@@ -83,28 +84,33 @@ const Login = () => {
             icon: "error",
             confirmButtonText: "OK",
             confirmButtonColor: "#4F46E5",
-          })
-
-        } else {
-          // Show success message using SweetAlert2
-          await Swal.fire({
-            title: "Success!",
-            text: response.data.data.message,
-            icon: "success",
-            confirmButtonText: "OK",
-            confirmButtonColor: "#4F46E5",
-            timer: 2000,
-            timerProgressBar: true,
-            showConfirmButton: false,
             position: "center",
-            toast: false,
             customClass: {
               popup: 'animated fadeInDown'
             }
           });
+          // Don't close modal on error
+          return;
         }
 
-        // Reset form and close modal
+        // Show success message using SweetAlert2
+        await Swal.fire({
+          title: "Success!",
+          text: response.data.data.message,
+          icon: "success",
+          confirmButtonText: "OK",
+          confirmButtonColor: "#4F46E5",
+          timer: 2000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          position: "center",
+          toast: false,
+          customClass: {
+            popup: 'animated fadeInDown'
+          }
+        });
+
+        // Only reset and close modal on success
         setShowQuickAttendance(false);
         setQuickAttendanceData({ email: "", password: "", action: "CHECKIN" });
         setQuickAttendanceMessage("");
@@ -121,6 +127,7 @@ const Login = () => {
             popup: 'animated fadeInDown'
           }
         });
+        // Don't close modal on error
       } else {
         // Show error message for other error codes
         await Swal.fire({
@@ -134,6 +141,7 @@ const Login = () => {
             popup: 'animated fadeInDown'
           }
         });
+        // Don't close modal on error
       }
     } catch (err) {
       // Show error message using SweetAlert2
@@ -149,11 +157,16 @@ const Login = () => {
         }
       });
       console.error(err);
+      // Don't close modal on error
     }
   };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const toggleQuickAttendancePasswordVisibility = () => {
+    setShowQuickAttendancePassword(!showQuickAttendancePassword);
   };
 
   return (
@@ -317,13 +330,24 @@ const Login = () => {
                     <MdLock className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
-                    type="password"
+                    type={showQuickAttendancePassword ? "text" : "password"}
                     value={quickAttendanceData.password}
                     onChange={(e) => setQuickAttendanceData({ ...quickAttendanceData, password: e.target.value })}
                     className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                     placeholder="Enter your password"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={toggleQuickAttendancePasswordVisibility}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                  >
+                    {showQuickAttendancePassword ? (
+                      <MdVisibilityOff className="h-5 w-5" />
+                    ) : (
+                      <MdVisibility className="h-5 w-5" />
+                    )}
+                  </button>
                 </div>
               </div>
 

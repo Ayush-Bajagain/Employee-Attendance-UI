@@ -324,12 +324,32 @@ export default function AdminAttendance() {
 
   const handleExportReport = async () => {
     try {
-      const response = await axios.post(
-        `${url}/attendance/export-attendance`,
-        {
+      let exportData = {};
+      
+      if (filterType === 'monthly') {
+        exportData = {
+          year: selectedYear,
+          month: selectedMonth,
           department: selectedDepartment || undefined,
           searchQuery: searchQuery || undefined
-        },
+        };
+      } else if (filterType === 'today') {
+        const today = new Date();
+        exportData = {
+          date: today.toISOString().split('T')[0],
+          department: selectedDepartment || undefined,
+          searchQuery: searchQuery || undefined
+        };
+      } else {
+        exportData = {
+          department: selectedDepartment || undefined,
+          searchQuery: searchQuery || undefined
+        };
+      }
+
+      const response = await axios.post(
+        `${url}/attendance/export-attendance`,
+        exportData,
         {
           withCredentials: true,
           responseType: 'blob'
@@ -346,8 +366,15 @@ export default function AdminAttendance() {
       const link = document.createElement('a');
       link.href = url;
       
-      // Set the file name
-      const fileName = `attendance_report_${new Date().toISOString().split('T')[0]}.xlsx`;
+      // Set the file name based on filter type
+      let fileName = 'attendance_report';
+      if (filterType === 'monthly') {
+        fileName += `_${selectedYear}_${selectedMonth}`;
+      } else if (filterType === 'today') {
+        fileName += '_today';
+      }
+      fileName += '.xlsx';
+      
       link.setAttribute('download', fileName);
       
       // Append to body, click and remove
@@ -592,15 +619,6 @@ export default function AdminAttendance() {
     <div className="p-6 mt-4 lg:mt-0">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Employee Management</h1>
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={handleExportReport}
-            className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
-          >
-            <MdDownload />
-            Export Report
-          </button>
-        </div>
       </div>
 
       {/* Summary Cards */}
@@ -679,6 +697,17 @@ export default function AdminAttendance() {
               </svg>
             </div>
           </div>
+        </div>
+
+        {/* Download Button */}
+        <div className="bg-white rounded-lg shadow-md p-3">
+          <button
+            onClick={handleExportReport}
+            className="flex items-center gap-2 bg-blue-500 text-white px-4 py-1.5 rounded-md hover:bg-blue-600 transition-colors text-sm"
+          >
+            <MdDownload />
+            Download {filterType === 'monthly' ? 'Monthly' : filterType === 'today' ? 'Today\'s' : 'All'} Report
+          </button>
         </div>
       </div>
 
